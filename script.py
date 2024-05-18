@@ -247,6 +247,7 @@ while True:
                     cloudDB.commit()
                 elif current_cat_room_pet_number == previous_cat_room_pet_number:
                     cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+                    cloudDB.commit()
 
         else:
             print("Invalid control value:", control)
