@@ -80,24 +80,24 @@ void loop()
 			petCounter--;
 			delay(3000);
 		}
+	}
 
-		float humidity = dht.getHumidity();
-		float temperature = dht.getTemperature();
+	float humidity = dht.getHumidity();
+	float temperature = dht.getTemperature();
 
-		Serial.println("Room: Cat Room");
-		Serial.print("Total pets inside: ");
-		Serial.println(petCounter);
+	Serial.println("Room: Cat Room");
+	Serial.print("Total pets inside: ");
+	Serial.println(petCounter);
 
-		if (petCounter > 0)
-		{
-			digitalWrite(LEDPin, HIGH);
-			Serial.println("Light: ON");
-		}
-		else
-		{
-			digitalWrite(LEDPin, LOW);
-			Serial.println("Light: OFF");
-		}
+	if (petCounter > 0)
+	{
+		digitalWrite(LEDPin, HIGH);
+		Serial.println("Light: ON");
+	}
+	else
+	{
+		digitalWrite(LEDPin, LOW);
+		Serial.println("Light: OFF");
 	}
 
 	Serial.print("Humidity: ");

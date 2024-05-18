@@ -160,7 +160,6 @@ while True:
                 if ser.in_waiting > 0:
                     lines = [ser.readline().decode('utf-8').strip()
                              for _ in range(10)]
-                    print("has message")
 
                 print("Total pets inside: ", lines[0])
                 current_cat_room_pet_number = int(lines[0].rsplit("Total pets inside: ")[1])
