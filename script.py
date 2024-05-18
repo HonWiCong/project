@@ -18,20 +18,22 @@ previous_cat_room_pet_number = None
 cloudDB = mysql.connector.connect(host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com", user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
 cloudCursor = cloudDB.cursor(dictionary=True)
 
-localDB = mysql.connector.connect(host="localhost", user="pi", password="123465", database="petcomfort_db")
+localDB = mysql.connector.connect(host="localhost", user="pi", password="123456", database="petcomfort_db")
 localCursor = localDB.cursor(dictionary=True)
 
 localCursor.execute("""
-CREATE TABLE IF NOT EXISTS Raw_Sensor_Data (
-    recordID INT AUTO_INCREMENT PRIMARY KEY,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    temperature_raw FLOAT,
-    humidity_raw FLOAT,
-    light_raw FLOAT,
-    proximity_raw FLOAT,
-    fanSpeed_raw INT,
-    otherSensor1_raw FLOAT,
-    otherSensor2_raw FLOAT
+CREATE TABLE IF NOT EXISTS Cat_Raw_Data (
+    rawID INT AUTO_INCREMENT PRIMARY KEY,
+    petCount INT,
+    humidity FLOAT,
+    lightState BOOLEAN DEFAULT FALSE,
+    temperature_C FLOAT,
+    temperature_F FLOAT,
+    fanState BOOLEAN DEFAULT FALSE,
+    fanSpeed INT,
+    windowState BOOLEAN DEFAULT FALSE,
+    dustLevel FLOAT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """)
 
