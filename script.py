@@ -25,12 +25,12 @@ with mydb.cursor() as mycursor:
         catTableID INT AUTO_INCREMENT PRIMARY KEY,
         time DATETIME DEFAULT CURRENT_TIMESTAMP,
         petCount INT, 
-        light VARCHAR(11),             
+        lightState BOOLEAN DEFAULT FALSE,
         humidity FLOAT,
         temperature_C FLOAT,
         temperature_F FLOAT,
-        window VARCHAR(11),
-        fan VARCHAR(11),
+        windowState BOOLEAN DEFAULT FALSE,
+        fanState BOOLEAN DEFAULT FALSE,
         fanSpeed INT
     )
     """)
@@ -52,9 +52,9 @@ with mydb.cursor() as mycursor:
     mycursor.execute("""
     CREATE TABLE IF NOT EXISTS Cat_Control_Table (
         catControlID INT AUTO_INCREMENT PRIMARY KEY,
-        light BOOLEAN DEFAULT FALSE,
-        fan BOOLEAN DEFAULT FALSE,
-        window BOOLEAN DEFAULT FALSE
+        lightState BOOLEAN DEFAULT FALSE,
+        fanState BOOLEAN DEFAULT FALSE,
+        windowState BOOLEAN DEFAULT FALSE
     )
     """)
 
@@ -152,11 +152,14 @@ while True:
                     print("has message")
 
                 print("Total pets inside: ", lines[0])
-                current_cat_room_pet_number = int(
-                    lines[0].rsplit("Total pets inside: ")[1])
+                current_cat_room_pet_number = int(lines[0].rsplit("Total pets inside: ")[1])
 
                 print("Light: ", lines[1])
                 light = lines[1].split("Light: ")[1]
+                if light == "ON":
+                    light = 1
+                else:
+                    light = 0
 
                 print("Humidity: ", lines[2])
                 humidity = float(lines[2].split("Humidity: ")[1])
@@ -172,9 +175,17 @@ while True:
 
                 print("Window: ", lines[6])
                 window = lines[6].split("Window: ")[1]
+                if window == "OPEN":
+                    window = 1
+                else:
+                    window = 0
 
                 print("Fan: ", lines[7])
                 fan = lines[7].split("Fan: ")[1]
+                if fan == "ON":
+                    fan = 1
+                else:
+                    fan = 0
 
                 print("Fan Speed: ", lines[8])
                 fan_speed = int(lines[8].split("Fan Speed: ")[1])
@@ -186,14 +197,14 @@ while True:
                         mycursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
                         latest_record = mycursor.fetchone()
                         if (latest_record and latest_record['petCount'] != 0):
-                            sql = "INSERT INTO Cat_Table (date, time, petCount, light, humidity, temperature_C, temperature_F, dustLevel, window, fan, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                            sql = "INSERT INTO Cat_Table (date, time, petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                             val = (formatted_date, formatted_time, 0, light, None, None, None, dust_level, window, fan, fan_speed)
                             mycursor.execute(sql, val)
                             mydb.commit()
 
                 elif current_cat_room_pet_number > 0:
                     with mydb.cursor() as mycursor:
-                        sql = "INSERT INTO Cat_Table (date, time, petCount, light, humidity, temperature_C, temperature_F, dustLevel, window, fan, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                        sql = "INSERT INTO Cat_Table (date, time, petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                         val = (formatted_date, formatted_time, current_cat_room_pet_number, light,
                                 humidity, temperature_C, temperature_F, dust_level, window, fan, fan_speed)
                         mycursor.execute(sql, val)
