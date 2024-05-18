@@ -207,16 +207,15 @@ while True:
                         mycursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
                         latest_record = mycursor.fetchone()
                         if (latest_record and latest_record['petCount'] != 0):
-                            sql = "INSERT INTO Cat_Table (date, time, petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                            val = (formatted_date, formatted_time, 0, light, None, None, None, dust_level, window, fan, fan_speed)
+                            sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                            val = (0, light, None, None, None, dust_level, window, fan, fan_speed)
                             mycursor.execute(sql, val)
                             cloudDB.commit()
 
                 elif current_cat_room_pet_number > 0:
                     with cloudDB.cursor() as mycursor:
-                        sql = "INSERT INTO Cat_Table (date, time, petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                        val = (formatted_date, formatted_time, current_cat_room_pet_number, light,
-                                humidity, temperature_C, temperature_F, dust_level, window, fan, fan_speed)
+                        sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                        val = (current_cat_room_pet_number, light, humidity, temperature_C, temperature_F, dust_level, window, fan, fan_speed)
                         mycursor.execute(sql, val)
                         cloudDB.commit()
 
