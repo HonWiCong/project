@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS Cat_Raw_Data (
 )
 """)
 
+cloudCursor.execute("SET time_zone = '+08:00';")
 cloudCursor.execute("""
 CREATE TABLE IF NOT EXISTS Cat_Table (
     catTableID INT AUTO_INCREMENT PRIMARY KEY,
