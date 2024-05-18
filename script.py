@@ -235,15 +235,18 @@ while True:
                 #     cloudDB.commit()
 
                 if (current_cat_room_pet_number != previous_cat_room_pet_number):
-                    current_cat_room_pet_number = previous_cat_room_pet_number
-                    cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES ({current_cat_room_pet_number}, {light}, {humidity}, {temperature_C}, {temperature_F}, {window}, {fan}, {fan_speed})")
-                    newInsertedID = cloudCursor.lastrowid
+                    previous_cat_room_pet_number = current_cat_room_pet_number
+
+                    if (current_cat_room_pet_number == 0):
+                        cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
+                    elif (current_cat_room_pet_number > 0):
+                        cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES ({current_cat_room_pet_number}, {light}, {humidity}, {temperature_C}, {temperature_F}, {window}, {fan}, {fan_speed})")
+                        newInsertedID = cloudCursor.lastrowid
+                        cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+                    
                     cloudDB.commit()
-                    print("Added new data to Cat_Table")
-                elif current_cat_room_pet_number > 0:
+                elif current_cat_room_pet_number == previous_cat_room_pet_number:
                     cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
-                    cloudDB.commit()
-                    print("Added new data to Cat_Dust_Table")
 
         else:
             print("Invalid control value:", control)
