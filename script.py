@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS Cat_Table (
 )
 """)
 
-# Adjust treshold
+# Adjust threshold
 cloudCursor.execute("""
 CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
     catAdjustTableID INT AUTO_INCREMENT PRIMARY KEY,
@@ -64,6 +64,12 @@ CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
     irDistance INT
 )
 """)
+
+cloudCursor.execute("SELECT COUNT(*) FROM Cat_Adjust_Table")
+count = cloudCursor.fetchone()[0]
+if count == 0:
+    cloudCursor.execute(f"INSERT INTO Cat_Adjust_Table (fanTemp, dustWindow, petLight, irDistance) VALUES (30, 180, 'ON', 100)")
+    cloudCursor.connection.commit()
 
 # Manual value
 cloudCursor.execute("""
@@ -75,6 +81,11 @@ CREATE TABLE IF NOT EXISTS Cat_Control_Table (
 )
 """)
 
+cloudCursor.execute("SELECT COUNT(*) FROM Cat_Control_Table")
+count = cloudCursor.fetchone()[0]
+if count == 0:
+    cloudCursor.execute(f"INSERT INTO Cat_Control_Table (lightState, fanState, windowState) VALUES (0, 0, 0)")
+    cloudCursor.connection.commit()
 
 cloudCursor.execute("""
 CREATE TABLE IF NOT EXISTS Cat_Dust_Table (
@@ -92,6 +103,12 @@ CREATE TABLE IF NOT EXISTS Mode_Table (
     control VARCHAR(20)
 )
 """)
+
+cloudCursor.execute("SELECT COUNT(*) FROM Mode_Table")
+count = cloudCursor.fetchone()[0]
+if count == 0:
+    cloudCursor.execute(f"INSERT INTO Mode_Table (control) VALUES ('false')")
+    cloudCursor.connection.commit()
 
 time.sleep(2)
 
