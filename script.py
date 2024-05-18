@@ -113,6 +113,27 @@ if count == 0:
 time.sleep(2)
 
 newInsertedID = None
+
+cache = {
+    "mode_data": None,
+    "row": None,
+    "control_row": None
+}
+
+def fetch_data():
+    while True:
+        with cloudDB.cursor() as cloudCursor:
+            cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
+            cache["mode_data"] = cloudCursor.fetchone()
+
+            cloudCursor.execute("SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
+            cache["row"] = cloudCursor.fetchone()
+
+            cloudCursor.execute("SELECT * FROM Cat_Control_Table")
+            cache["control_row"] = cloudCursor.fetchone()
+
+        time.sleep(3)
+
 while True:
     # Fetch control value from Mode_Table
     cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
@@ -124,20 +145,20 @@ while True:
     cloudCursor.execute("SELECT * FROM Cat_Control_Table")
     control_row = cloudCursor.fetchone()
 
-    if mode_data is not None:
+    if cache["mode_data"] is not None:
         control = mode_data['control']
         control_value = 1 if control == 'true' else 0
 
         data = {
             'control': control_value,
-            'fanTemp': row["fanTemp"],
-            'dustWindow': row["dustWindow"],
-            'petLight': row["petLight"],
-            'irDistance': row["irDistance"],
+            'fanTemp': cache['row']["fanTemp"],
+            'dustWindow': cache['row']["dustWindow"],
+            'petLight': cache['row']["petLight"],
+            'irDistance': cache['row']["irDistance"],
 
-            'light': control_row["lightState"],
-            'fan': control_row["fanState"],
-            'window': control_row["windowState"],
+            'light': cache['control_row']["lightState"],
+            'fan': cache['control_row']["fanState"],
+            'window': cache['control_row']["windowState"],
         }
         # print("Data from Adjust_Table:", data)
 
