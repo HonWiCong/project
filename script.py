@@ -94,17 +94,8 @@ CREATE TABLE IF NOT EXISTS Mode_Table (
 
 time.sleep(2)
 
+newInsertedID = None
 while True:
-    response = ser.readline()
-
-    try:
-        # Attempt to decode the response using utf-8
-        response = response.decode("utf-8").strip()
-        print(response)
-    except UnicodeDecodeError:
-        # Handle the case where decoding fails
-        print("Received undecodable bytes:", response)
-
     # Fetch control value from Mode_Table
     cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
     mode_data = cloudCursor.fetchone()
@@ -137,6 +128,16 @@ while True:
             ser.write(b'\n')
         except:
             print("Error in write")
+
+        response = ser.readline()
+
+        try:
+            # Attempt to decode the response using utf-8
+            response = response.decode("utf-8").strip()
+            print(response)
+        except UnicodeDecodeError:
+            # Handle the case where decoding fails
+            print("Received undecodable bytes:", response)
 
         if control == 'false':
             # Send data to Arduino
@@ -197,32 +198,44 @@ while True:
                 fan_speed = int(lines[8].split("Fan Speed: ")[1])
 
                 # Insert data into Cat_Table
-                if current_cat_room_pet_number == 0:
-                    # Search if the latest record has petCount = 0
-                    cloudCursor.execute(
-                        f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
-                    latest_record = cloudCursor.fetchone()
-                    print("Latest record:", latest_record)
+                # if current_cat_room_pet_number == 0:
+                #     # Search if the latest record has petCount = 0
+                #     cloudCursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
+                #     latest_record = cloudCursor.fetchone()
+                #     print("Latest record:", latest_record)
 
-                    if latest_record == None or latest_record['petCount'] != 0:
-                        sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                        val = (0, light, None, None, None,
-                               window, fan, fan_speed)
-                        cloudCursor.execute(sql, val)
-                        cloudDB.commit()
+                #     if latest_record == None or latest_record['petCount'] != 0:
+                #         sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                #         val = (0, light, None, None, None,
+                #                window, fan, fan_speed)
+                #         cloudCursor.execute(sql, val)
+                #         cloudDB.commit()
 
-                elif current_cat_room_pet_number > 0:
-                    sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                    val = (current_cat_room_pet_number, light, humidity,
-                           temperature_C, temperature_F, window, fan, fan_speed)
-                    cloudCursor.execute(sql, val)
+                # elif current_cat_room_pet_number > 0:
+                #     sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                #     val = (current_cat_room_pet_number, light, humidity,
+                #            temperature_C, temperature_F, window, fan, fan_speed)
+                #     cloudCursor.execute(sql, val)
+                #     cloudDB.commit()
+
+                if (current_cat_room_pet_number != previous_cat_room_pet_number):
+                    current_cat_room_pet_number = previous_cat_room_pet_number
+                    cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES ({current_cat_room_pet_number}, {light}, {humidity}, {temperature_C}, {temperature_F}, {window}, {fan}, {fan_speed})")
+                    newInsertedID = cloudCursor.lastrowid
                     cloudDB.commit()
+                    print("Added new data to Cat_Table")
+                elif current_cat_room_pet_number > 0:
+                    cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+                    cloudDB.commit()
+                    print("Added new data to Cat_Dust_Table")
+
         else:
             print("Invalid control value:", control)
     else:
         print("No data in Mode_Table")
 
     cloudDB.commit()
+    localDB.commit()
 
 # Close serial connection and database connection
 ser.close()
