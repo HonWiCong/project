@@ -9,7 +9,6 @@ import os
 
 # Initialize serial communication
 ser = serial.Serial('/dev/ttyUSB0', 9600)
-time.sleep(2)
 
 current_cat_room_pet_number = None
 previous_cat_room_pet_number = None
@@ -98,13 +97,14 @@ CREATE TABLE IF NOT EXISTS Mode_Table (
 # 	""")
 # 	mydb.commit()
 
+time.sleep(2)
+
 while True:
     # Fetch control value from Mode_Table
     cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
     mode_data = cloudCursor.fetchone()
 
-    cloudCursor.execute(
-        "SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
+    cloudCursor.execute("SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
     row = cloudCursor.fetchone()
 
     cloudCursor.execute("SELECT * FROM Cat_Control_Table")
@@ -121,9 +121,9 @@ while True:
             'petLight': row["petLight"],
             'irDistance': row["irDistance"],
 
-            'light': control_row["light"],
-            'fan': control_row["fan"],
-            'window': control_row["window"],
+            'light': control_row["lightState"],
+            'fan': control_row["fanState"],
+            'window': control_row["windowState"],
         }
         # print("Data from Adjust_Table:", data)
 
