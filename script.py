@@ -14,10 +14,12 @@ current_cat_room_pet_number = None
 previous_cat_room_pet_number = None
 
 # Connect to MySQL database
-cloudDB = mysql.connector.connect(host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com", user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
+cloudDB = mysql.connector.connect(host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com",
+                                  user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
 cloudCursor = cloudDB.cursor(dictionary=True)
 
-localDB = mysql.connector.connect(host="localhost", user="pi", password="123456", database="petcomfort_db")
+localDB = mysql.connector.connect(
+    host="localhost", user="pi", password="123456", database="petcomfort_db")
 localCursor = localDB.cursor(dictionary=True)
 
 localCursor.execute("""
@@ -90,13 +92,6 @@ CREATE TABLE IF NOT EXISTS Mode_Table (
 )
 """)
 
-# insert a dummy data to the cat dust table
-# with mydb.cursor() as mycursor:
-# 	mycursor.execute("""
-# 	INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (1, 0.5)
-# 	""")
-# 	mydb.commit()
-
 time.sleep(2)
 
 while True:
@@ -104,7 +99,8 @@ while True:
     cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
     mode_data = cloudCursor.fetchone()
 
-    cloudCursor.execute("SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
+    cloudCursor.execute(
+        "SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
     row = cloudCursor.fetchone()
 
     cloudCursor.execute("SELECT * FROM Cat_Control_Table")
@@ -162,7 +158,8 @@ while True:
                              for _ in range(10)]
 
                 print("Total pets inside: ", lines[0])
-                current_cat_room_pet_number = int(lines[0].rsplit("Total pets inside: ")[1])
+                current_cat_room_pet_number = int(
+                    lines[0].rsplit("Total pets inside: ")[1])
 
                 print("Light: ", lines[1])
                 light = lines[1].split("Light: ")[1]
@@ -202,36 +199,25 @@ while True:
 
                 # Insert data into Cat_Table
                 if current_cat_room_pet_number == 0:
-                    with cloudDB.cursor(dictionary=True) as mycursor:
-                        # Search if the latest record has petCount = 0
-                        mycursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
-                        latest_record = mycursor.fetchone()
-                        print("Latest record:", latest_record)
-                        if latest_record == None or latest_record['petCount'] != 0:
-                            sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                            val = (0, light, None, None, None, window, fan, fan_speed)
-                            mycursor.execute(sql, val)
-                            cloudDB.commit()
+                    # Search if the latest record has petCount = 0
+                    cloudCursor.execute(
+                        f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
+                    latest_record = cloudCursor.fetchone()
+                    print("Latest record:", latest_record)
 
-                elif current_cat_room_pet_number > 0:
-                    with cloudDB.cursor() as mycursor:
+                    if latest_record == None or latest_record['petCount'] != 0:
                         sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                        val = (current_cat_room_pet_number, light, humidity, temperature_C, temperature_F, window, fan, fan_speed)
-                        mycursor.execute(sql, val)
+                        val = (0, light, None, None, None,
+                               window, fan, fan_speed)
+                        cloudCursor.execute(sql, val)
                         cloudDB.commit()
 
-                # Get the ID of the last inserted row
-                last_insert_id = mycursor.lastrowid
-        # elif control == 'true':
-        #     if response.startswith("Room"):
-        #         room = response.split("Room: ")[1].rstrip()
-        #         print("RoomName:", room)
-        #         cursor.execute("SELECT * FROM Cat_Control_Table LIMIT 1")
-        #         existing_record = cursor.fetchone()
-
-        #         if existing_record:
-        #             cursor.execute(f"UPDATE Cat_Control_Table SET room = '{room}'")
-            print(response)
+                elif current_cat_room_pet_number > 0:
+                    sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                    val = (current_cat_room_pet_number, light, humidity,
+                           temperature_C, temperature_F, window, fan, fan_speed)
+                    cloudCursor.execute(sql, val)
+                    cloudDB.commit()
         else:
             print("Invalid control value:", control)
     else:

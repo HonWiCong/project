@@ -51,7 +51,8 @@ void loop()
 		if (IRIn > 10)
 		{
 			unsigned long startTime = millis();
-			while (millis() - startTime < 5000)
+			// while (millis() - startTime < 5000)
+			while (true)
 			{
 				float volt = analogRead(IROutPin) * 0.0048828125;
 				int Out = 13 * pow(volt, -1);
@@ -67,7 +68,8 @@ void loop()
 		else if (IROut > 10)
 		{
 			unsigned long startTime = millis();
-			while (millis() - startTime < 5000)
+			// while (millis() - startTime < 5000)
+			while (true)
 			{
 				float volt = analogRead(IRInPin) * 0.0048828125;
 				int In = 13 * pow(volt, -1);
