@@ -95,12 +95,21 @@ CREATE TABLE IF NOT EXISTS Mode_Table (
 time.sleep(2)
 
 while True:
+    response = ser.readline()
+
+    try:
+        # Attempt to decode the response using utf-8
+        response = response.decode("utf-8").strip()
+        print(response)
+    except UnicodeDecodeError:
+        # Handle the case where decoding fails
+        print("Received undecodable bytes:", response)
+
     # Fetch control value from Mode_Table
     cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
     mode_data = cloudCursor.fetchone()
 
-    cloudCursor.execute(
-        "SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
+    cloudCursor.execute("SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
     row = cloudCursor.fetchone()
 
     cloudCursor.execute("SELECT * FROM Cat_Control_Table")
@@ -128,16 +137,6 @@ while True:
             ser.write(b'\n')
         except:
             print("Error in write")
-
-        response = ser.readline()
-
-        try:
-            # Attempt to decode the response using utf-8
-            response = response.decode("utf-8").strip()
-            print(response)
-        except UnicodeDecodeError:
-            # Handle the case where decoding fails
-            print("Received undecodable bytes:", response)
 
         if control == 'false':
             # Send data to Arduino
