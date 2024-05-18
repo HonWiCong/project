@@ -15,70 +15,79 @@ current_cat_room_pet_number = None
 previous_cat_room_pet_number = None
 
 # Connect to MySQL database
-mydb = mysql.connector.connect(
-    host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com", user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
-cursor = mydb.cursor(dictionary=True)
+cloudDB = mysql.connector.connect(host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com", user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
+cloudCursor = cloudDB.cursor(dictionary=True)
 
-with mydb.cursor() as mycursor:
-    mycursor.execute("""
-    CREATE TABLE IF NOT EXISTS Cat_Table (
-        catTableID INT AUTO_INCREMENT PRIMARY KEY,
-        time DATETIME DEFAULT CURRENT_TIMESTAMP,
-        petCount INT, 
-        lightState BOOLEAN DEFAULT FALSE,
-        humidity FLOAT,
-        temperature_C FLOAT,
-        temperature_F FLOAT,
-        windowState BOOLEAN DEFAULT FALSE,
-        fanState BOOLEAN DEFAULT FALSE,
-        fanSpeed INT
-    )
-    """)
+localDB = mysql.connector.connect(host="localhost", user="pi", password="123465", database="petcomfort_db")
+localCursor = localDB.cursor(dictionary=True)
+
+localCursor.execute("""
+CREATE TABLE IF NOT EXISTS Raw_Sensor_Data (
+    recordID INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    temperature_raw FLOAT,
+    humidity_raw FLOAT,
+    light_raw FLOAT,
+    proximity_raw FLOAT,
+    fanSpeed_raw INT,
+    otherSensor1_raw FLOAT,
+    otherSensor2_raw FLOAT
+)
+""")
+
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Table (
+    catTableID INT AUTO_INCREMENT PRIMARY KEY,
+    time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    petCount INT, 
+    lightState BOOLEAN DEFAULT FALSE,
+    humidity FLOAT,
+    temperature_C FLOAT,
+    temperature_F FLOAT,
+    windowState BOOLEAN DEFAULT FALSE,
+    fanState BOOLEAN DEFAULT FALSE,
+    fanSpeed INT
+)
+""")
 
 # Adjust treshold
-with mydb.cursor() as mycursor:
-    mycursor.execute("""
-    CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
-        catAdjustTableID INT AUTO_INCREMENT PRIMARY KEY,
-        fanTemp FLOAT,
-        dustWindow INT,
-        petLight VARCHAR(20),
-        irDistance INT
-    )
-    """)
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
+    catAdjustTableID INT AUTO_INCREMENT PRIMARY KEY,
+    fanTemp FLOAT,
+    dustWindow INT,
+    petLight VARCHAR(20),
+    irDistance INT
+)
+""")
 
-# Mannual value
-with mydb.cursor() as mycursor:
-    mycursor.execute("""
-    CREATE TABLE IF NOT EXISTS Cat_Control_Table (
-        catControlID INT AUTO_INCREMENT PRIMARY KEY,
-        lightState BOOLEAN DEFAULT FALSE,
-        fanState BOOLEAN DEFAULT FALSE,
-        windowState BOOLEAN DEFAULT FALSE
-    )
-    """)
+# Manual value
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Control_Table (
+    catControlID INT AUTO_INCREMENT PRIMARY KEY,
+    lightState BOOLEAN DEFAULT FALSE,
+    fanState BOOLEAN DEFAULT FALSE,
+    windowState BOOLEAN DEFAULT FALSE
+)
+""")
 
 
-# create a table to store the dust level data from cat table that use cat table id as foreign key
-with mydb.cursor() as mycursor:
-    mycursor.execute("""
-	CREATE TABLE IF NOT EXISTS Cat_Dust_Table (
-		dustID INT AUTO_INCREMENT PRIMARY KEY,
-		catTableId INT,
-		dustLevel FLOAT,
-        time DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (catTableId) REFERENCES Cat_Table(catTableID)
-	)
-	""")
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Dust_Table (
+    catDustID INT AUTO_INCREMENT PRIMARY KEY,
+    catTableId INT,
+    dustLevel FLOAT,
+    time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (catTableId) REFERENCES Cat_Table(catTableID)
+)
+""")
 
-# Auto / Mannual
-with mydb.cursor() as mycursor:
-    mycursor.execute("""
-    CREATE TABLE IF NOT EXISTS Mode_Table (
-        modeTableID INT AUTO_INCREMENT PRIMARY KEY,
-        control VARCHAR(20)
-    )
-    """)
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Mode_Table (
+    modeTableID INT AUTO_INCREMENT PRIMARY KEY,
+    control VARCHAR(20)
+)
+""")
 
 # insert a dummy data to the cat dust table
 # with mydb.cursor() as mycursor:
@@ -89,15 +98,15 @@ with mydb.cursor() as mycursor:
 
 while True:
     # Fetch control value from Mode_Table
-    cursor.execute("SELECT control FROM Mode_Table LIMIT 1")
-    mode_data = cursor.fetchone()
+    cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
+    mode_data = cloudCursor.fetchone()
 
-    cursor.execute(
-        "SELECT fanTemp, dustWindow, petLight, irDistance FROM Adjust_Table")
-    row = cursor.fetchone()
+    cloudCursor.execute(
+        "SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
+    row = cloudCursor.fetchone()
 
-    cursor.execute("SELECT * FROM Control_Table")
-    control_row = cursor.fetchone()
+    cloudCursor.execute("SELECT * FROM Cat_Control_Table")
+    control_row = cloudCursor.fetchone()
 
     if mode_data is not None:
         control = mode_data['control']
@@ -192,7 +201,7 @@ while True:
 
                 # Insert data into Cat_Table
                 if current_cat_room_pet_number == 0:
-                    with mydb.cursor(dictionary=True) as mycursor:
+                    with cloudDB.cursor(dictionary=True) as mycursor:
                         # Search if the latest record has petCount = 0
                         mycursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
                         latest_record = mycursor.fetchone()
@@ -200,15 +209,15 @@ while True:
                             sql = "INSERT INTO Cat_Table (date, time, petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                             val = (formatted_date, formatted_time, 0, light, None, None, None, dust_level, window, fan, fan_speed)
                             mycursor.execute(sql, val)
-                            mydb.commit()
+                            cloudDB.commit()
 
                 elif current_cat_room_pet_number > 0:
-                    with mydb.cursor() as mycursor:
+                    with cloudDB.cursor() as mycursor:
                         sql = "INSERT INTO Cat_Table (date, time, petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                         val = (formatted_date, formatted_time, current_cat_room_pet_number, light,
                                 humidity, temperature_C, temperature_F, dust_level, window, fan, fan_speed)
                         mycursor.execute(sql, val)
-                        mydb.commit()
+                        cloudDB.commit()
 
                 # Get the ID of the last inserted row
                 last_insert_id = mycursor.lastrowid
@@ -216,7 +225,7 @@ while True:
         #     if response.startswith("Room"):
         #         room = response.split("Room: ")[1].rstrip()
         #         print("RoomName:", room)
-        #         cursor.execute("SELECT * FROM Control_Table LIMIT 1")
+        #         cursor.execute("SELECT * FROM Cat_Control_Table LIMIT 1")
         #         existing_record = cursor.fetchone()
 
         #         if existing_record:
@@ -227,9 +236,9 @@ while True:
     else:
         print("No data in Mode_Table")
 
-    mydb.commit()
+    cloudDB.commit()
 
 # Close serial connection and database connection
 ser.close()
-cursor.close()
-mydb.close()
+cloudCursor.close()
+cloudDB.close()
