@@ -1,3 +1,4 @@
+import threading
 import mysql.connector
 import serial
 import time
@@ -6,6 +7,7 @@ from datetime import datetime
 # import matplotlib.pyplot as plt
 # import numpy as np
 import os
+from queue import Queue
 
 # Initialize serial communication
 ser = serial.Serial('/dev/ttyUSB0', 9600)
@@ -134,19 +136,14 @@ def fetch_data():
 
         time.sleep(3)
 
+fetch_thread = threading.Thread(target=fetch_data)
+fetch_thread.daemon = True
+fetch_thread.start()
+
 while True:
-    # Fetch control value from Mode_Table
-    cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
-    mode_data = cloudCursor.fetchone()
-
-    cloudCursor.execute("SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
-    row = cloudCursor.fetchone()
-
-    cloudCursor.execute("SELECT * FROM Cat_Control_Table")
-    control_row = cloudCursor.fetchone()
 
     if cache["mode_data"] is not None:
-        control = mode_data['control']
+        control = cache['mode_data']['control']
         control_value = 1 if control == 'true' else 0
 
         data = {
