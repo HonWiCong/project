@@ -66,10 +66,10 @@ CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
 """)
 
 cloudCursor.execute("SELECT COUNT(*) FROM Cat_Adjust_Table")
-count = cloudCursor.fetchone()[0]
+count = cloudCursor.fetchone()['COUNT(*)']
 if count == 0:
     cloudCursor.execute(f"INSERT INTO Cat_Adjust_Table (fanTemp, dustWindow, petLight, irDistance) VALUES (30, 180, 'ON', 100)")
-    cloudCursor.connection.commit()
+    cloudDB.commit()
 
 # Manual value
 cloudCursor.execute("""
@@ -82,10 +82,10 @@ CREATE TABLE IF NOT EXISTS Cat_Control_Table (
 """)
 
 cloudCursor.execute("SELECT COUNT(*) FROM Cat_Control_Table")
-count = cloudCursor.fetchone()[0]
+count = cloudCursor.fetchone()['COUNT(*)']
 if count == 0:
     cloudCursor.execute(f"INSERT INTO Cat_Control_Table (lightState, fanState, windowState) VALUES (0, 0, 0)")
-    cloudCursor.connection.commit()
+    cloudDB.commit()
 
 cloudCursor.execute("""
 CREATE TABLE IF NOT EXISTS Cat_Dust_Table (
@@ -105,10 +105,10 @@ CREATE TABLE IF NOT EXISTS Mode_Table (
 """)
 
 cloudCursor.execute("SELECT COUNT(*) FROM Mode_Table")
-count = cloudCursor.fetchone()[0]
+count = cloudCursor.fetchone()['COUNT(*)']
 if count == 0:
     cloudCursor.execute(f"INSERT INTO Mode_Table (control) VALUES ('false')")
-    cloudCursor.connection.commit()
+    cloudDB.commit()
 
 time.sleep(2)
 
@@ -150,11 +150,9 @@ while True:
         response = ser.readline()
 
         try:
-            # Attempt to decode the response using utf-8
             response = response.decode("utf-8").strip()
             print(response)
         except UnicodeDecodeError:
-            # Handle the case where decoding fails
             print("Received undecodable bytes:", response)
 
         if control == 'false':
