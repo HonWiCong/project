@@ -207,7 +207,7 @@ while True:
                         mycursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
                         latest_record = mycursor.fetchone()
                         print("Latest record:", latest_record)
-                        if (latest_record['petCount'] != 0 or latest_record == None):
+                        if latest_record == None or latest_record['petCount'] != 0:
                             sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, dustLevel, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                             val = (0, light, None, None, None, dust_level, window, fan, fan_speed)
                             mycursor.execute(sql, val)
