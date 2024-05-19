@@ -124,14 +124,15 @@ async def fetch_data():
     async with conn.cursor() as cur:
         await cur.execute("""
             SELECT Mode_Table.control, 
-                   Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
-                   Cat_Control_Table.* 
+                Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
+                Cat_Control_Table.* 
             FROM Mode_Table 
-            LEFT JOIN Cat_Adjust_Table ON 1=1 
+            LEFT JOIN Cat_Adjust_Table ON 1=1
             LEFT JOIN Cat_Control_Table ON 1=1 
             LIMIT 1
         """)
         result = await cur.fetchone()
+        print("Result:", result)
         return result
 
 while True:
