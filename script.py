@@ -6,6 +6,8 @@ from datetime import datetime
 # import matplotlib.pyplot as plt
 # import numpy as np
 import os
+import asyncio
+import aiomysql
 
 # Initialize serial communication
 ser = serial.Serial('/dev/ttyUSB0', 9600)
@@ -114,18 +116,33 @@ time.sleep(2)
 
 newInsertedID = None
 
-while True:
-    cloudCursor.execute("""
+async def fetch_data():
+    await cloudCursor.execute("""
         SELECT Mode_Table.control, 
-               Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
-               Cat_Control_Table.* 
+                Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
+                Cat_Control_Table.* 
         FROM Mode_Table 
-        LEFT JOIN Cat_Adjust_Table ON 1=1
+        LEFT JOIN Cat_Adjust_Table ON 1=1 
         LEFT JOIN Cat_Control_Table ON 1=1 
         LIMIT 1
     """)
-    result = cloudCursor.fetchone()
-    print("Result from Mode_Table:", result)
+    result = await cloudCursor.fetchone()
+    return result
+
+while True:
+    # cloudCursor.execute("""
+    #     SELECT Mode_Table.control, 
+    #            Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
+    #            Cat_Control_Table.* 
+    #     FROM Mode_Table 
+    #     LEFT JOIN Cat_Adjust_Table ON 1=1
+    #     LEFT JOIN Cat_Control_Table ON 1=1 
+    #     LIMIT 1
+    # """)
+    # result = cloudCursor.fetchone()
+    # print("Result from Mode_Table:", result)
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(fetch_data())
 
     if result['control'] is not None:
         control = result['control']
