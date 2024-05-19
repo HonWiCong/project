@@ -150,6 +150,7 @@ def fetch_data():
             """)
             with result_lock:
                 cache.update(cursor.fetchone())
+            print("Data from Mode_Table:", cache)
             time.sleep(5)
 
 def process_data():
