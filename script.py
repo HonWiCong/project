@@ -151,7 +151,7 @@ def fetch_data():
             with result_lock:
                 cache.update(cursor.fetchone())
             print("Data from Mode_Table:", cache)
-            time.sleep(5)
+            time.sleep(2)
 
 def process_data():
     previous_cat_room_pet_number = None
