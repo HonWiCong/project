@@ -114,10 +114,6 @@ time.sleep(2)
 
 newInsertedID = None
 
-mode_data = None
-row = None
-control_row = None
-
 while True:
     cloudCursor.execute("""
         SELECT Mode_Table.control, 
@@ -131,20 +127,20 @@ while True:
     result = cloudCursor.fetchone()
     print("Result from Mode_Table:", result)
 
-    if mode_data is not None:
-        control = mode_data['control']
+    if result['control'] is not None:
+        control = result['control']
         control_value = 1 if control == 'true' else 0
 
         data = {
             'control': control_value,
-            'fanTemp': row["fanTemp"],
-            'dustWindow': row["dustWindow"],
-            'petLight': row["petLight"],
-            'irDistance': row["irDistance"],
+            'fanTemp': result["fanTemp"],
+            'dustWindow': result["dustWindow"],
+            'petLight': result["petLight"],
+            'irDistance': result["irDistance"],
 
-            'light': control_row["lightState"],
-            'fan': control_row["fanState"],
-            'window': control_row["windowState"],
+            'light': result["lightState"],
+            'fan': result["fanState"],
+            'window': result["windowState"],
         }
         # print("Data from Adjust_Table:", data)
 
