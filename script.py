@@ -114,6 +114,10 @@ time.sleep(2)
 
 newInsertedID = None
 
+mode_data = None
+row = None
+control_row = None
+
 while True:
     cloudCursor.execute("""
         SELECT Mode_Table.control, 
@@ -124,10 +128,8 @@ while True:
         LEFT JOIN Cat_Control_Table ON 1=1 
         LIMIT 1
     """)
-    mode_data, row, control_row = cloudCursor.fetchone()
-    print("Mode data:", mode_data)
-    print("Row data:", row)
-    print("Control row data:", control_row)
+    result = cloudCursor.fetchone()
+    print("Result from Mode_Table:", result)
 
     if mode_data is not None:
         control = mode_data['control']
