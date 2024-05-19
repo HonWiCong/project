@@ -118,7 +118,7 @@ time.sleep(2)
 
 newInsertedID = None
 
-result = {
+cache = {
     'control': None,
     'fanTemp': None,
     'dustWindow': None,
@@ -149,28 +149,28 @@ def fetch_data():
                 LIMIT 1
             """)
             with result_lock:
-                result.update(cursor.fetchone())
-            print("Result:", result)
+                cache.update(cursor.fetchone())
+            time.sleep(5)
 
 def process_data():
     previous_cat_room_pet_number = None
 
     while True:
         with result_lock:
-            if result['control'] is not None:
-                control = result['control']
+            if cache['control'] is not None:
+                control = cache['control']
                 control_value = 1 if control == 'true' else 0
 
                 data = {
                     'control': control_value,
-                    'fanTemp': result["fanTemp"],
-                    'dustWindow': result["dustWindow"],
-                    'petLight': result["petLight"],
-                    'irDistance': result["irDistance"],
+                    'fanTemp': cache["fanTemp"],
+                    'dustWindow': cache["dustWindow"],
+                    'petLight': cache["petLight"],
+                    'irDistance': cache["irDistance"],
 
-                    'light': result["lightState"],
-                    'fan': result["fanState"],
-                    'window': result["windowState"],
+                    'light': cache["lightState"],
+                    'fan': cache["fanState"],
+                    'window': cache["windowState"],
                 }
                 # print("Data from Adjust_Table:", data)
 
