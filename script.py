@@ -1,10 +1,11 @@
-import threading
 import mysql.connector
 import serial
 import time
 import json
 from datetime import datetime
-from queue import Queue, Empty
+# import matplotlib.pyplot as plt
+# import numpy as np
+import os
 
 # Initialize serial communication
 ser = serial.Serial('/dev/ttyUSB0', 9600)
@@ -12,43 +13,11 @@ ser = serial.Serial('/dev/ttyUSB0', 9600)
 current_cat_room_pet_number = None
 previous_cat_room_pet_number = None
 
+# Connect to MySQL database
 cloudDB = mysql.connector.connect(host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com",
-                                    user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
+                                  user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
 cloudCursor = cloudDB.cursor(dictionary=True)
 
-# Function to fetch data from the cloud database
-def fetch_data(queue):
-    while True:
-        try:
-            cloudCursor.execute("SELECT control FROM Mode_Table LIMIT 1")
-            mode_data = cloudCursor.fetchone()
-
-            cloudCursor.execute("SELECT fanTemp, dustWindow, petLight, irDistance FROM Cat_Adjust_Table")
-            adjust_data = cloudCursor.fetchone()
-
-            cloudCursor.execute("SELECT * FROM Cat_Control_Table")
-            control_data = cloudCursor.fetchone()
-
-            queue.put({
-                "mode_data": mode_data,
-                "adjust_data": adjust_data,
-                "control_data": control_data
-            })
-
-        except Exception as e:
-            print(f"Error fetching data: {e}")
-
-        time.sleep(10)
-
-# Queue to hold fetched data
-data_queue = Queue()
-
-# Start the data fetching thread
-fetch_thread = threading.Thread(target=fetch_data, args=(data_queue,))
-fetch_thread.daemon = True
-fetch_thread.start()
-
-# Local database connection
 localDB = mysql.connector.connect(
     host="localhost", user="pi", password="123456", database="petcomfort_db")
 localCursor = localDB.cursor(dictionary=True)
@@ -69,9 +38,8 @@ CREATE TABLE IF NOT EXISTS Cat_Raw_Data (
 )
 """)
 
-# Create other necessary tables in the local database
 cloudCursor.execute("SET time_zone = '+08:00';")
-localCursor.execute("""
+cloudCursor.execute("""
 CREATE TABLE IF NOT EXISTS Cat_Table (
     catTableID INT AUTO_INCREMENT PRIMARY KEY,
     time DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -86,143 +54,215 @@ CREATE TABLE IF NOT EXISTS Cat_Table (
 )
 """)
 
-# Main loop to control the IoT device
+# Adjust threshold
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
+    catAdjustTableID INT AUTO_INCREMENT PRIMARY KEY,
+    fanTemp FLOAT,
+    dustWindow INT,
+    petLight VARCHAR(20),
+    irDistance INT
+)
+""")
+
+cloudCursor.execute("SELECT COUNT(*) FROM Cat_Adjust_Table")
+count = cloudCursor.fetchone()['COUNT(*)']
+if count == 0:
+    cloudCursor.execute(f"INSERT INTO Cat_Adjust_Table (fanTemp, dustWindow, petLight, irDistance) VALUES (30, 180, 'ON', 100)")
+    cloudDB.commit()
+
+# Manual value
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Control_Table (
+    catControlID INT AUTO_INCREMENT PRIMARY KEY,
+    lightState BOOLEAN DEFAULT FALSE,
+    fanState BOOLEAN DEFAULT FALSE,
+    windowState BOOLEAN DEFAULT FALSE
+)
+""")
+
+cloudCursor.execute("SELECT COUNT(*) FROM Cat_Control_Table")
+count = cloudCursor.fetchone()['COUNT(*)']
+if count == 0:
+    cloudCursor.execute(f"INSERT INTO Cat_Control_Table (lightState, fanState, windowState) VALUES (0, 0, 0)")
+    cloudDB.commit()
+
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Cat_Dust_Table (
+    catDustID INT AUTO_INCREMENT PRIMARY KEY,
+    catTableId INT,
+    dustLevel FLOAT,
+    time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (catTableId) REFERENCES Cat_Table(catTableID)
+)
+""")
+
+cloudCursor.execute("""
+CREATE TABLE IF NOT EXISTS Mode_Table (
+    modeTableID INT AUTO_INCREMENT PRIMARY KEY,
+    control VARCHAR(20)
+)
+""")
+
+cloudCursor.execute("SELECT COUNT(*) FROM Mode_Table")
+count = cloudCursor.fetchone()['COUNT(*)']
+if count == 0:
+    cloudCursor.execute(f"INSERT INTO Mode_Table (control) VALUES ('false')")
+    cloudDB.commit()
+
+time.sleep(2)
+
+newInsertedID = None
+
 while True:
-    try:
-        # Attempt to get data from the queue with a timeout
+    cloudCursor.execute("""
+        SELECT Mode_Table.control, 
+               Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
+               Cat_Control_Table.* 
+        FROM Mode_Table 
+        LEFT JOIN Cat_Adjust_Table ON 1=1
+        LEFT JOIN Cat_Control_Table ON 1=1 
+        LIMIT 1
+    """)
+    mode_data, row, control_row = cloudCursor.fetchone()
+    print("Mode data:", mode_data)
+    print("Row data:", row)
+    print("Control row data:", control_row)
+
+    if mode_data is not None:
+        control = mode_data['control']
+        control_value = 1 if control == 'true' else 0
+
+        data = {
+            'control': control_value,
+            'fanTemp': row["fanTemp"],
+            'dustWindow': row["dustWindow"],
+            'petLight': row["petLight"],
+            'irDistance': row["irDistance"],
+
+            'light': control_row["lightState"],
+            'fan': control_row["fanState"],
+            'window': control_row["windowState"],
+        }
+        # print("Data from Adjust_Table:", data)
+
         try:
-            data = data_queue.get(timeout=1)
-        except Empty:
-            # No new data available, continue the loop
-            continue
+            ser.write(json.dumps(data).encode("utf-8"))
+            ser.write(b'\n')
+        except:
+            print("Error in write")
 
-        if data and data["mode_data"] and data["adjust_data"] and data["control_data"]:
-            control = data["mode_data"]['control']
-            control_value = 1 if control == 'true' else 0
+        response = ser.readline()
 
-            iot_data = {
-                'control': control_value,
-                'fanTemp': data['adjust_data']["fanTemp"],
-                'dustWindow': data['adjust_data']["dustWindow"],
-                'petLight': data['adjust_data']["petLight"],
-                'irDistance': data['adjust_data']["irDistance"],
+        try:
+            response = response.decode("utf-8").strip()
+            print(response)
+        except UnicodeDecodeError:
+            print("Received undecodable bytes:", response)
 
-                'light': data['control_data']["lightState"],
-                'fan': data['control_data']["fanState"],
-                'window': data['control_data']["windowState"],
-            }
+        if control == 'false':
+            # Send data to Arduino
+            if response.startswith("Room: "):
+                room = response.split("Room: ")[1].rstrip()
 
-            try:
-                ser.write(json.dumps(iot_data).encode("utf-8"))
-                ser.write(b'\n')
-            except:
-                print("Error in write")
+                # Get current date and time
+                current_datetime = datetime.now()
 
-            response = ser.readline()
+                # Format date and time
+                formatted_date = current_datetime.strftime('%d %B %Y, %A')
+                formatted_time = current_datetime.strftime('%I:%M %p')
 
-            try:
-                response = response.decode("utf-8").strip()
-                print(response)
-            except UnicodeDecodeError:
-                print("Received undecodable bytes:", response)
+                # Read sensor data lines from serial
+                lines = None
+                if ser.in_waiting > 0:
+                    lines = [ser.readline().decode('utf-8').strip()
+                             for _ in range(10)]
 
-            if control == 'false':
-                # Send data to Arduino
-                if response.startswith("Room: "):
-                    room = response.split("Room: ")[1].rstrip()
+                print("Total pets inside: ", lines[0])
+                current_cat_room_pet_number = int(
+                    lines[0].rsplit("Total pets inside: ")[1])
 
-                    # Get current date and time
-                    current_datetime = datetime.now()
+                print("Light: ", lines[1])
+                light = lines[1].split("Light: ")[1]
+                if light == "ON":
+                    light = 1
+                else:
+                    light = 0
 
-                    # Format date and time
-                    formatted_date = current_datetime.strftime('%d %B %Y, %A')
-                    formatted_time = current_datetime.strftime('%I:%M %p')
+                print("Humidity: ", lines[2])
+                humidity = float(lines[2].split("Humidity: ")[1])
 
-                    # Read sensor data lines from serial
-                    lines = None
-                    if ser.in_waiting > 0:
-                        lines = [ser.readline().decode('utf-8').strip()
-                                 for _ in range(10)]
+                print("Temperature (C): ", lines[3])
+                temperature_C = float(lines[3].split("Temperature (C): ")[1])
 
-                    print("Total pets inside: ", lines[0])
-                    current_cat_room_pet_number = int(
-                        lines[0].rsplit("Total pets inside: ")[1])
+                print("Temperature (F): ", lines[4])
+                temperature_F = float(lines[4].split("Temperature (F): ")[1])
 
-                    print("Light: ", lines[1])
-                    light = lines[1].split("Light: ")[1]
-                    if light == "ON":
-                        light = 1
-                    else:
-                        light = 0
+                print("Dust Level: ", lines[5])
+                dust_level = int(lines[5].split("Dust Level: ")[1])
 
-                    print("Humidity: ", lines[2])
-                    humidity = float(lines[2].split("Humidity: ")[1])
+                print("Window: ", lines[6])
+                window = lines[6].split("Window: ")[1]
+                if window == "OPEN":
+                    window = 1
+                else:
+                    window = 0
 
-                    print("Temperature (C): ", lines[3])
-                    temperature_C = float(lines[3].split("Temperature (C): ")[1])
+                print("Fan: ", lines[7])
+                fan = lines[7].split("Fan: ")[1]
+                if fan == "ON":
+                    fan = 1
+                else:
+                    fan = 0
 
-                    print("Temperature (F): ", lines[4])
-                    temperature_F = float(lines[4].split("Temperature (F): ")[1])
+                print("Fan Speed: ", lines[8])
+                fan_speed = int(lines[8].split("Fan Speed: ")[1])
 
-                    print("Dust Level: ", lines[5])
-                    dust_level = int(lines[5].split("Dust Level: ")[1])
+                # Insert data into Cat_Table
+                # if current_cat_room_pet_number == 0:
+                #     # Search if the latest record has petCount = 0
+                #     cloudCursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
+                #     latest_record = cloudCursor.fetchone()
+                #     print("Latest record:", latest_record)
 
-                    print("Window: ", lines[6])
-                    window = lines[6].split("Window: ")[1]
-                    if window == "OPEN":
-                        window = 1
-                    else:
-                        window = 0
+                #     if latest_record == None or latest_record['petCount'] != 0:
+                #         sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                #         val = (0, light, None, None, None,
+                #                window, fan, fan_speed)
+                #         cloudCursor.execute(sql, val)
+                #         cloudDB.commit()
 
-                    print("Fan: ", lines[7])
-                    fan = lines[7].split("Fan: ")[1]
-                    if fan == "ON":
-                        fan = 1
-                    else:
-                        fan = 0
+                # elif current_cat_room_pet_number > 0:
+                #     sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                #     val = (current_cat_room_pet_number, light, humidity,
+                #            temperature_C, temperature_F, window, fan, fan_speed)
+                #     cloudCursor.execute(sql, val)
+                #     cloudDB.commit()
 
-                    print("Fan Speed: ", lines[8])
-                    fan_speed = int(lines[8].split("Fan Speed: ")[1])
+                if (current_cat_room_pet_number != previous_cat_room_pet_number):
+                    previous_cat_room_pet_number = current_cat_room_pet_number
 
-                    # Insert data into Cat_Table
-                    cloudDB = mysql.connector.connect(host="database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com",
-                                                      user="smartpetcomfort", password="swinburneaaronsarawakidauniversityjacklin", database="petcomfort_db")
-                    cloudCursor = cloudDB.cursor(dictionary=True)
+                    if (current_cat_room_pet_number == 0):
+                        cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
+                    elif (current_cat_room_pet_number > 0):
+                        cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES ({current_cat_room_pet_number}, {light}, {humidity}, {temperature_C}, {temperature_F}, {window}, {fan}, {fan_speed})")
+                        newInsertedID = cloudCursor.lastrowid
+                        cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+                    
+                    cloudDB.commit()
+                elif current_cat_room_pet_number > 0 and current_cat_room_pet_number == previous_cat_room_pet_number:
+                    cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+                    cloudDB.commit()
 
-                    if current_cat_room_pet_number != previous_cat_room_pet_number:
-                        previous_cat_room_pet_number = current_cat_room_pet_number
+        else:
+            print("Invalid control value:", control)
+    else:
+        print("No data in Mode_Table")
 
-                        if current_cat_room_pet_number == 0:
-                            cloudCursor.execute("""
-                            INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed)
-                            VALUES (0, 0, 0, 0, 0, 0, 0, 0)
-                            """)
-                        elif current_cat_room_pet_number > 0:
-                            cloudCursor.execute("""
-                            INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                            """, (current_cat_room_pet_number, light, humidity, temperature_C, temperature_F, window, fan, fan_speed))
-                            newInsertedID = cloudCursor.lastrowid
-                            cloudCursor.execute("""
-                            INSERT INTO Cat_Dust_Table (catTableId, dustLevel)
-                            VALUES (%s, %s)
-                            """, (newInsertedID, dust_level))
+    cloudDB.commit()
+    localDB.commit()
 
-                        cloudDB.commit()
-                    elif current_cat_room_pet_number > 0 and current_cat_room_pet_number == previous_cat_room_pet_number:
-                        cloudCursor.execute("""
-                        INSERT INTO Cat_Dust_Table (catTableId, dustLevel)
-                        VALUES (%s, %s)
-                        """, (newInsertedID, dust_level))
-                        cloudDB.commit()
-
-                    cloudCursor.close()
-                    cloudDB.close()
-
-    except Exception as e:
-        print(f"Error in main loop: {e}")
-
-# Close serial connection and local database connection
+# Close serial connection and database connection
 ser.close()
-localCursor.close()
-localDB.close()
+cloudCursor.close()
+cloudDB.close()
