@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Cat Room</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}" />
+	</head>
+	<body>
+		<div class="container2">
+			<img src="../static/images/cat2.png" alt="Cat Room" class="title-background" />
+			<h1 class="title">Cat Room</h1>
+			<div class="button-container">
+				<button id="openModalBtn" class="btn">Live Streaming</button>
+			</div>
+			<div id="chartModal" class="modal">
+				<div class="modal-content">
+					<span class="close">&times;</span>
+					<img src="{{ url_for('static', filename='Bedroom/tempChart/temperature_chart.png') }}" alt="Chart Image" />
+				</div>
+			</div>
+
+			{% for row in data %}
+			<div class="data-container">
+				<div class="data-row">
+					<div class="data-label">Date:</div>
+					<div class="data-value">{{ row["time"].strftime('%Y-%m-%d') }}</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Time:</div>
+					<div class="data-value">{{ row["time"].strftime('%H:%M:%S') }}</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Humidity:</div>
+					<div class="data-value">{{ row["humidity"] }}</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Temperature:</div>
+					<div class="data-value">{{ row["temperature_C"] }}°C / {{ row["temperature_F"] }}°F</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Light:</div>
+					<div class="data-value">{% if row["lightState"] == 0 %} OFF {% else %} ON {% endif %}</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Fan:</div>
+					<div class="data-value">{% if row["fanState"] == 0 %} OFF {% else %} ON {% endif %}</div>
+					<div class="data-label data-label-fan-speed">Fan Speed:</div>
+					<div class="data-value">{{ row["fanSpeed"] }}</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Window:</div>
+					<div class="data-value">{% if row["windowState"] == 0 %} OFF {% else %} ON {% endif %}</div>
+				</div>
+				<div class="data-row">
+					<div class="data-label">Dust Level:</div>
+					<img src="{{ url_for('static', filename='catRoom/chart/chart_' + row['catTableID']|string + '.png') }}" alt="Chart Image" />
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+
+		<script>
+			// JavaScript to handle modal functionality
+			var modal = document.getElementById("chartModal");
+			var btn = document.getElementById("openModalBtn");
+			var span = document.getElementsByClassName("close")[0];
+
+			btn.onclick = function () {
+				modal.style.display = "block";
+			};
+
+			span.onclick = function () {
+				modal.style.display = "none";
+			};
+
+			window.onclick = function (event) {
+				if (event.target == modal) {
+					modal.style.display = "none";
+				}
+			};
+		</script>
+	</body>
+</html>

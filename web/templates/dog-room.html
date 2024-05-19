@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dog Room</title>
+        <link rel="stylesheet" type="text/css" href="style.css" />
+    </head>
+    <body>
+        <div class="container2">
+            <img
+                src="images/dog2.png"
+                alt="Dog room"
+                class="title-background"
+            />
+            <h1 class="title">Dog Room</h1>
+            <div class="button-container">
+                <button id="openModalBtn" class="btn">Live Streaming</button>
+            </div>
+            <div id="chartModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <img
+                        src="{{ url_for('static', filename='Dining Room/tempChart/temperature_chart.png') }}"
+                        alt="Chart Image"
+                    />
+                </div>
+            </div>
+
+            {% for row in data %}
+            <div class="data-container">
+                <div class="data-row">
+                    <div class="data-label">Date:</div>
+                    <div class="data-value">{{ row["date"] }}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Time:</div>
+                    <div class="data-value">{{ row["time"] }}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Humidity:</div>
+                    <div class="data-value">{{ row["humidity"] }}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Temperature:</div>
+                    <div class="data-value">
+                        {{ row["temperature_C"] }}Â°C / {{ row["temperature_F"]
+                        }}Â°F
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Light:</div>
+                    <div class="data-value">{{ row["light"] }}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Fan:</div>
+                    <div class="data-value">{{ row["fan"] }}</div>
+                    <div class="data-label data-label-fan-speed">
+                        Fan Speed:
+                    </div>
+                    <div class="data-value">{{ row["fanSpeed"] }}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Window:</div>
+                    <div class="data-value">{{ row["Window"] }}</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Dust Level:</div>
+                    <img
+                        src="{{ url_for('static', filename=row['roomName'] + '/chart/chart' + row['roomID']|string + '.png') }}"
+                        alt="Chart Image"
+                    />
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <script>
+            // JavaScript to handle modal functionality
+            var modal = document.getElementById("chartModal");
+            var btn = document.getElementById("openModalBtn");
+            var span = document.getElementsByClassName("close")[0];
+
+            btn.onclick = function () {
+                modal.style.display = "block";
+            };
+
+            span.onclick = function () {
+                modal.style.display = "none";
+            };
+
+            window.onclick = function (event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            };
+        </script>
+    </body>
+</html>

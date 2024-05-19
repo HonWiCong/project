@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
     catAdjustTableID INT AUTO_INCREMENT PRIMARY KEY,
     fanTemp FLOAT,
     dustWindow INT,
-    petLight VARCHAR(20),
+    petLight INT,
     irDistance INT
 )
 """)
@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS Cat_Adjust_Table (
 cloudCursor.execute("SELECT COUNT(*) FROM Cat_Adjust_Table")
 count = cloudCursor.fetchone()['COUNT(*)']
 if count == 0:
-    cloudCursor.execute(f"INSERT INTO Cat_Adjust_Table (fanTemp, dustWindow, petLight, irDistance) VALUES (30, 180, 'ON', 100)")
+    cloudCursor.execute(
+        f"INSERT INTO Cat_Adjust_Table (fanTemp, dustWindow, petLight, irDistance) VALUES (28, 500, 1, 10)")
     cloudDB.commit()
 
 # Manual value
@@ -88,7 +89,8 @@ CREATE TABLE IF NOT EXISTS Cat_Control_Table (
 cloudCursor.execute("SELECT COUNT(*) FROM Cat_Control_Table")
 count = cloudCursor.fetchone()['COUNT(*)']
 if count == 0:
-    cloudCursor.execute(f"INSERT INTO Cat_Control_Table (lightState, fanState, windowState) VALUES (0, 0, 0)")
+    cloudCursor.execute(
+        f"INSERT INTO Cat_Control_Table (lightState, fanState, windowState) VALUES (0, 0, 0)")
     cloudDB.commit()
 
 cloudCursor.execute("""
@@ -130,12 +132,13 @@ cache = {
 }
 result_lock = threading.Lock()
 
+
 def fetch_data():
     connection = pymysql.connect(host='database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com',
-                                user='smartpetcomfort',
-                                password='swinburneaaronsarawakidauniversityjacklin',
-                                db='petcomfort_db',
-                                cursorclass=pymysql.cursors.DictCursor)
+                                 user='smartpetcomfort',
+                                 password='swinburneaaronsarawakidauniversityjacklin',
+                                 db='petcomfort_db',
+                                 cursorclass=pymysql.cursors.DictCursor)
 
     while True:
         with connection.cursor() as cursor:
@@ -152,6 +155,7 @@ def fetch_data():
                 cache.update(cursor.fetchone())
             print("Data from Mode_Table:", cache)
             time.sleep(2)
+
 
 def process_data():
     previous_cat_room_pet_number = None
@@ -198,14 +202,15 @@ def process_data():
                         current_datetime = datetime.now()
 
                         # Format date and time
-                        formatted_date = current_datetime.strftime('%d %B %Y, %A')
+                        formatted_date = current_datetime.strftime(
+                            '%d %B %Y, %A')
                         formatted_time = current_datetime.strftime('%I:%M %p')
 
                         # Read sensor data lines from serial
                         lines = None
                         if ser.in_waiting > 0:
                             lines = [ser.readline().decode('utf-8').strip()
-                                    for _ in range(10)]
+                                     for _ in range(10)]
 
                         print("Total pets inside: ", lines[0])
                         current_cat_room_pet_number = int(
@@ -222,10 +227,12 @@ def process_data():
                         humidity = float(lines[2].split("Humidity: ")[1])
 
                         print("Temperature (C): ", lines[3])
-                        temperature_C = float(lines[3].split("Temperature (C): ")[1])
+                        temperature_C = float(
+                            lines[3].split("Temperature (C): ")[1])
 
                         print("Temperature (F): ", lines[4])
-                        temperature_F = float(lines[4].split("Temperature (F): ")[1])
+                        temperature_F = float(
+                            lines[4].split("Temperature (F): ")[1])
 
                         print("Dust Level: ", lines[5])
                         dust_level = int(lines[5].split("Dust Level: ")[1])
@@ -251,15 +258,19 @@ def process_data():
                             previous_cat_room_pet_number = current_cat_room_pet_number
 
                             if (current_cat_room_pet_number == 0):
-                                cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
+                                cloudCursor.execute(
+                                    f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
                             elif (current_cat_room_pet_number > 0):
-                                cloudCursor.execute(f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES ({current_cat_room_pet_number}, {light}, {humidity}, {temperature_C}, {temperature_F}, {window}, {fan}, {fan_speed})")
+                                cloudCursor.execute(
+                                    f"INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES ({current_cat_room_pet_number}, {light}, {humidity}, {temperature_C}, {temperature_F}, {window}, {fan}, {fan_speed})")
                                 newInsertedID = cloudCursor.lastrowid
-                                cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
-                            
+                                cloudCursor.execute(
+                                    f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+
                             cloudDB.commit()
                         elif current_cat_room_pet_number > 0 and current_cat_room_pet_number == previous_cat_room_pet_number:
-                            cloudCursor.execute(f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
+                            cloudCursor.execute(
+                                f"INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES ({newInsertedID}, {dust_level})")
                             cloudDB.commit()
 
                 else:

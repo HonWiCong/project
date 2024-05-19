@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Smart Pet Home</title>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	</head>
+	<body>
+		<div class="container">
+			<div class="buttons">
+				<div class="toggle-container">
+					<h2>Change Mode:</h2>
+					<label class="switch">
+						<input type="checkbox" id="toggleButton" />
+						<span class="slider round"></span>
+					</label>
+				</div>
+				<div class="button-group">
+					<button class="btn" id="adjustBtn" onclick="showAdjustContainer()">Adjust</button>
+					<button class="btn" id="controlBtn" onclick="showControlContainer()">Control</button>
+				</div>
+			</div>
+			<h2 id="modeLabel">Mode: Automatic</h2>
+			<div class="rooms">
+				<a href="main-room" class="room-link">
+					<div class="room-container">
+						<img src="../static/images/main.png" alt="Main Room" />
+						<h3 class="room-title">Global</h3>
+					</div>
+				</a>
+				<a href="cat-room" class="room-link">
+					<div class="room-container">
+						<img src="../static/images/cat.jpeg" alt="Cat Room" />
+						<h3 class="room-title">Cat Room</h3>
+					</div>
+				</a>
+				<a href="dog-room" class="room-link">
+					<div class="room-container">
+						<img src="../static/images/dog.jpeg" alt="Dog Room" />
+						<h3 class="room-title">Dog Room</h3>
+					</div>
+				</a>
+				<a href="pig-room" class="room-link">
+					<div class="room-container">
+						<img src="../static/images/pig.jpeg" alt="Pig Room" />
+						<h3 class="room-title">Pig Room</h3>
+					</div>
+				</a>
+			</div>
+		</div>
+
+		<!-- Adjust Container -->
+		<div id="adjustContainer" class="popup-container hidden">
+			<div class="popup-content">
+				<h2 class="popup-title">Adjustments</h2>
+				<button class="btn cancel-btn cancel-btn2" type="button" onclick="hideAdjustContainer()">
+					<i class="fa fa-close"></i>
+				</button>
+
+				<!-- Tab links -->
+				<div class="tabs-wrapper">
+					<div class="tab">
+						<button class="tablinks active" onclick="openTab(event, 'tab1')" id="defaultOpen">Cat Room</button>
+						<button class="tablinks" onclick="openTab(event, 'tab2')">Dog Room</button>
+						<button class="tablinks" onclick="openTab(event, 'tab3')">Pig Room</button>
+					</div>
+				</div>
+
+				<!-- Tab content -->
+				<div id="tab1" class="tabcontent">
+					<!-- Form for Tab 1 -->
+					<form action="/catAdjust" method="POST" onsubmit="return validateAdjustForm('tab1')">
+						<div class="popup-fields">
+							<div class="popup-field">
+								<label for="fanTemp">Above what temperature (C) should the fan be ON?</label>
+								<input type="number" id="fanTemp" name="fanTemp" value="{{ cat_adjust_data['fanTemp'] }}" />
+							</div>
+							<div class="popup-field">
+								<label for="dustWindow">Above what dust level should the window be open?</label>
+								<input type="number" id="dustWindow" name="dustWindow" value="{{ cat_adjust_data['dustWindow'] }}" />
+							</div>
+							<div class="popup-field">
+								<label for="petLight">How many pets need to be in the room for the light to be ON?</label>
+								<input type="number" id="petLight" name="petLight" value="{{ cat_adjust_data['petLight']}}" />
+							</div>
+							<div class="popup-field">
+								<label for="irDistance">Distance between pet and IR sensor to count as in or out.</label>
+								<input type="number" id="irDistance" name="irDistance" value="{{ cat_adjust_data['irDistance'] }}" />
+							</div>
+						</div>
+						<div class="buttons-in-popup-form">
+							<button class="btn cancel-btn" type="button" onclick="hideAdjustContainer()">Cancel</button>
+							<button class="btn submit-btn" type="submit">Submit</button>
+						</div>
+					</form>
+				</div>
+
+				<div id="tab2" class="tabcontent">
+					<!-- Form for Tab 2 -->
+					<form action="/adjust" method="POST" onsubmit="return validateAdjustForm('tab2')">
+						<div class="popup-fields">
+							<div class="popup-field">
+								<label for="fanTemp">Above what temperature (C) should the fan be ON?</label>
+								<!-- <input
+                                    type="number"
+                                    id="fanTemp"
+                                    name="fanTemp"
+                                    value="{{ adjust_data['fanTemp'] if adjust_data else '23' }}"
+                                /> -->
+							</div>
+							<div class="popup-field">
+								<label for="dustWindow">Above what dust level should the window be open?</label>
+								<!-- <input
+                                    type="number"
+                                    id="dustWindow"
+                                    name="dustWindow"
+                                    value="{{ adjust_data['dustWindow'] if adjust_data else '20' }}"
+                                /> -->
+							</div>
+							<div class="popup-field">
+								<label for="petNumLight">How many pets need to be in the room for the light to be ON?</label>
+								<!-- <input
+                                    type="number"
+                                    id="petNumLight"
+                                    name="petNumLight"
+                                    value="{{ adjust_data['petNumLight'] if adjust_data else '15' }}"
+                                /> -->
+							</div>
+							<div class="popup-field">
+								<label for="lightThreshold">Distance between pet and IR sensor to count as in or out.</label>
+								<!-- <input
+                                    type="number"
+                                    id="lightThreshold"
+                                    name="lightThreshold"
+                                    value="{{ adjust_data['lightThreshold'] if adjust_data else '30' }}"
+                                /> -->
+							</div>
+						</div>
+						<div class="buttons-in-popup-form">
+							<button class="btn cancel-btn" type="button" onclick="hideAdjustContainer()">Cancel</button>
+							<button class="btn submit-btn" type="submit">Submit</button>
+						</div>
+					</form>
+				</div>
+
+				<div id="tab3" class="tabcontent">
+					<!-- Form for Tab 3 -->
+					<form action="/adjust" method="POST" onsubmit="return validateAdjustForm('tab3')">
+						<div class="popup-fields">
+							<div class="popup-field">
+								<label for="fanTemp">Above what temperature (C) should the fan be ON?</label>
+								<!-- <input
+                                    type="number"
+                                    id="fanTemp"
+                                    name="fanTemp"
+                                    value="{{ adjust_data['fanTemp'] if adjust_data else '23' }}"
+                                /> -->
+							</div>
+							<div class="popup-field">
+								<label for="dustWindow">Above what dust level should the window be open?</label>
+								<!-- <input
+                                    type="number"
+                                    id="dustWindow"
+                                    name="dustWindow"
+                                    value="{{ adjust_data['dustWindow'] if adjust_data else '20' }}"
+                                /> -->
+							</div>
+							<div class="popup-field">
+								<label for="petNumLight">How many pets need to be in the room for the light to be ON?</label>
+								<!-- <input
+                                    type="number"
+                                    id="petNumLight"
+                                    name="petNumLight"
+                                    value="{{ adjust_data['petNumLight'] if adjust_data else '15' }}"
+                                /> -->
+							</div>
+							<div class="popup-field">
+								<label for="lightThreshold">Distance between pet and IR sensor to count as in or out.</label>
+								<!-- <input
+                                    type="number"
+                                    id="lightThreshold"
+                                    name="lightThreshold"
+                                    value="{{ adjust_data['lightThreshold'] if adjust_data else '30' }}"
+                                /> -->
+							</div>
+						</div>
+						<div class="buttons-in-popup-form">
+							<button class="btn cancel-btn" type="button" onclick="hideAdjustContainer()">Cancel</button>
+							<button class="btn submit-btn" type="submit">Submit</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Control Container -->
+		<div id="controlContainer" class="popup-container hidden">
+			<div class="popup-content">
+				<h2 class="popup-title">Control the Robot</h2>
+				<button class="btn cancel-btn cancel-btn2" type="button" onclick="hideControlContainer()">
+					<i class="fa fa-close"></i>
+				</button>
+
+				<!-- Tab links -->
+				<div class="tabs-wrapper">
+					<div class="tab">
+						<button class="tablinks active" onclick="openTab(event, 'tab4')" id="defaultOpen2">Cat Room</button>
+						<button class="tablinks" onclick="openTab(event, 'tab5')">Dog Room</button>
+						<button class="tablinks" onclick="openTab(event, 'tab6')">Pig Room</button>
+					</div>
+				</div>
+
+				<!-- Tab content -->
+				<div id="tab4" class="tabcontent" style="display: block">
+					<div class="control-panel">
+						<div class="device-controls">
+							<div class="device-control">
+								<h2>
+									<label for="lightToggle">Light</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="lightToggle" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+							<div class="device-control">
+								<h2>
+									<label for="fanToggle">Fan</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="fanToggle" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+							<div class="device-control">
+								<h2>
+									<label for="windowToggle">Window</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="windowToggle" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div id="tab5" class="tabcontent">
+					<div class="control-panel">
+						<div class="device-controls">
+							<div class="device-control">
+								<h2>
+									<label for="lightToggleDog">Light</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="lightToggleDog" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+							<div class="device-control">
+								<h2>
+									<label for="fanToggleDog">Fan</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="fanToggleDog" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+							<div class="device-control">
+								<h2>
+									<label for="windowToggleDog">Window</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="windowToggleDog" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div id="tab6" class="tabcontent">
+					<div class="control-panel">
+						<div class="device-controls">
+							<div class="device-control">
+								<h2>
+									<label for="lightTogglePig">Light</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="lightTogglePig" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+							<div class="device-control">
+								<h2>
+									<label for="fanTogglePig">Fan</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="fanTogglePig" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+							<div class="device-control">
+								<h2>
+									<label for="windowTogglePig">Window</label>
+								</h2>
+								<div>
+									<label class="switch">
+										<input type="checkbox" id="windowTogglePig" onchange="toggle()" />
+										<span class="slider round"></span>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			// Function to set initial mode based on stored state
+			function setInitialMode() {
+				const isControlMode = sessionStorage.getItem("controlMode");
+				if (isControlMode === "true") {
+					toggleButton.checked = true;
+					adjustBtn.style.display = "none";
+					controlBtn.style.display = "inline-flex";
+					modeLabel.textContent = "Mode: Controllable";
+				} else {
+					toggleButton.checked = false;
+					adjustBtn.style.display = "inline-flex";
+					controlBtn.style.display = "none";
+					modeLabel.textContent = "Mode: Automatic";
+				}
+			}
+
+			// Event listener for toggle button change
+			toggleButton.addEventListener("change", function () {
+				if (this.checked) {
+					sessionStorage.setItem("controlMode", "true");
+					adjustBtn.style.display = "none";
+					controlBtn.style.display = "inline-flex";
+					modeLabel.textContent = "Mode: Controllable"; // Change label to "Controllable"
+				} else {
+					sessionStorage.setItem("controlMode", "false");
+					adjustBtn.style.display = "inline-flex";
+					controlBtn.style.display = "none";
+					modeLabel.textContent = "Mode: Automatic"; // Change label to "Automatic"
+				}
+			});
+
+			document.addEventListener("DOMContentLoaded", function () {
+				setInitialMode();
+			});
+
+			function showAdjustContainer() {
+				document.getElementById("adjustContainer").classList.remove("hidden");
+				document.getElementById("defaultOpen").click();
+			}
+
+			function hideAdjustContainer() {
+				document.getElementById("adjustContainer").classList.add("hidden");
+			}
+
+			function showControlContainer() {
+				document.getElementById("controlContainer").classList.remove("hidden");
+				document.getElementById("defaultOpen2").click();
+			}
+
+			function hideControlContainer() {
+				document.getElementById("controlContainer").classList.add("hidden");
+			}
+
+			function openTab(evt, tabName) {
+				var i, tabcontent, tablinks;
+				tabcontent = document.getElementsByClassName("tabcontent");
+				for (i = 0; i < tabcontent.length; i++) {
+					tabcontent[i].style.display = "none";
+				}
+				tablinks = document.getElementsByClassName("tablinks");
+				for (i = 0; i < tablinks.length; i++) {
+					tablinks[i].className = tablinks[i].className.replace(" active", "");
+				}
+				document.getElementById(tabName).style.display = "block";
+				evt.currentTarget.className += " active";
+			}
+		</script>
+
+		<script>
+			$(document).ready(function () {
+				$("#toggleButton").change(function () {
+					var mode = $(this).is(":checked") ? "automatic" : "controllable";
+					$.ajax({
+						type: "POST",
+						url: "/toggle-mode",
+						data: { mode: mode },
+						success: function (response) {
+							console.log(response);
+						},
+						error: function (xhr, status, error) {
+							console.error(xhr.responseText);
+						},
+					});
+				});
+			});
+		</script>
+
+		<script>
+			// Function to send control command to server
+			function sendControlCommand(light, fan, window) {
+				$.ajax({
+					type: "POST",
+					url: "/control",
+					data: {
+						light: light,
+						fan: fan,
+						window: window,
+					},
+					success: function (response) {
+						console.log(response);
+					},
+					error: function (xhr, status, error) {
+						console.error(xhr.responseText);
+					},
+				});
+			}
+
+			// Event listeners for control buttons
+			function toggle() {
+				var roomName = document.getElementById("roomNameLabel").textContent.trim(); // Get room name
+
+				if (roomName !== "None") {
+					// Check if room name is not "None"
+					var lightState = document.getElementById("lightToggle").checked;
+					var fanState = document.getElementById("fanToggle").checked;
+					var windowtate = document.getElementById("windowToggle").checked;
+					sendControlCommand("none", lightState, fanState, windowState);
+				} else {
+					// Room name is "None", prevent toggling of control buttons
+					alert("Cannot toggle control buttons when room name is 'None'.");
+					document.getElementById("lightToggle").checked = false;
+					document.getElementById("fanToggle").checked = false;
+					document.getElementById("windowToggle").checked = false;
+				}
+			}
+		</script>
+	</body>
+</html>
