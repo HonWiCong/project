@@ -121,7 +121,7 @@ async def fetch_data():
                                    user='smartpetcomfort', password='swinburneaaronsarawakidauniversityjacklin', 
                                    db='petcomfort_db')
 
-    async with conn.cursor() as cur:
+    async with conn.cursor(aiomysql.DictCursor) as cur:
         await cur.execute("""
             SELECT Mode_Table.control, 
                 Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
@@ -149,6 +149,7 @@ while True:
     # print("Result from Mode_Table:", result)
     loop = asyncio.get_event_loop()
     result = loop.run_until_complete(fetch_data())
+    print("Testing")
 
     if result['control'] is not None:
         control = result['control']
