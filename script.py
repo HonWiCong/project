@@ -117,17 +117,22 @@ time.sleep(2)
 newInsertedID = None
 
 async def fetch_data():
-    await cloudCursor.execute("""
-        SELECT Mode_Table.control, 
-                Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
-                Cat_Control_Table.* 
-        FROM Mode_Table 
-        LEFT JOIN Cat_Adjust_Table ON 1=1 
-        LEFT JOIN Cat_Control_Table ON 1=1 
-        LIMIT 1
-    """)
-    result = await cloudCursor.fetchone()
-    return result
+    conn = await aiomysql.connect(host='database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com', port=3306,
+                                   user='smartpetcomfort', password='swinburneaaronsarawakidauniversityjacklin', 
+                                   db='petcomfort_db')
+
+    async with conn.cursor() as cur:
+        await cur.execute("""
+            SELECT Mode_Table.control, 
+                   Cat_Adjust_Table.fanTemp, Cat_Adjust_Table.dustWindow, Cat_Adjust_Table.petLight, Cat_Adjust_Table.irDistance, 
+                   Cat_Control_Table.* 
+            FROM Mode_Table 
+            LEFT JOIN Cat_Adjust_Table ON 1=1 
+            LEFT JOIN Cat_Control_Table ON 1=1 
+            LIMIT 1
+        """)
+        result = await cur.fetchone()
+        return result
 
 while True:
     # cloudCursor.execute("""
