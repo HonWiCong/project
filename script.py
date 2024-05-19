@@ -118,6 +118,17 @@ time.sleep(2)
 
 newInsertedID = None
 
+result = {
+    'control': None,
+    'fanTemp': None,
+    'dustWindow': None,
+    'petLight': None,
+    'irDistance': None,
+    'light': None,
+    'fan': None,
+    'window': None
+}
+
 def fetch_data():
     connection = pymysql.connect(host='database-1.cjjqkkvq5tm1.us-east-1.rds.amazonaws.com',
                                 user='smartpetcomfort',
@@ -125,7 +136,7 @@ def fetch_data():
                                 db='petcomfort_db',
                                 cursorclass=pymysql.cursors.DictCursor)
 
-    try:
+    while True:
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT Mode_Table.control, 
@@ -138,14 +149,11 @@ def fetch_data():
             """)
             result = cursor.fetchone()
             print("Result:", result)
-            return result
-    finally:
-        connection.close()
 
 def process_data():
-    while True:
-        result = fetch_data()
+    previous_cat_room_pet_number = None
 
+    while True:
         if result['control'] is not None:
             control = result['control']
             control_value = 1 if control == 'true' else 0
@@ -235,27 +243,6 @@ def process_data():
                     print("Fan Speed: ", lines[8])
                     fan_speed = int(lines[8].split("Fan Speed: ")[1])
 
-                    # Insert data into Cat_Table
-                    # if current_cat_room_pet_number == 0:
-                    #     # Search if the latest record has petCount = 0
-                    #     cloudCursor.execute(f"SELECT * FROM Cat_Table ORDER BY catTableID DESC LIMIT 1")
-                    #     latest_record = cloudCursor.fetchone()
-                    #     print("Latest record:", latest_record)
-
-                    #     if latest_record == None or latest_record['petCount'] != 0:
-                    #         sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                    #         val = (0, light, None, None, None,
-                    #                window, fan, fan_speed)
-                    #         cloudCursor.execute(sql, val)
-                    #         cloudDB.commit()
-
-                    # elif current_cat_room_pet_number > 0:
-                    #     sql = "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                    #     val = (current_cat_room_pet_number, light, humidity,
-                    #            temperature_C, temperature_F, window, fan, fan_speed)
-                    #     cloudCursor.execute(sql, val)
-                    #     cloudDB.commit()
-
                     if (current_cat_room_pet_number != previous_cat_room_pet_number):
                         previous_cat_room_pet_number = current_cat_room_pet_number
 
@@ -279,5 +266,8 @@ def process_data():
         cloudDB.commit()
         localDB.commit()
 
+
 thread = threading.Thread(target=process_data)
 thread.start()
+second_thread = threading.Thread(target=fetch_data)
+second_thread.start()
