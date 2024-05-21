@@ -2,8 +2,7 @@
 #include "DHT.h"
 #include <ArduinoJson.h>
 
-JsonDocument outgoing;
-JsonDocument jsonDoc;
+StaticJsonDocument<200> outgoing;
 
 DHT dht;
 int DHTPin = 5;
@@ -51,6 +50,7 @@ void getInput()
 	// Read data from serial until newline
 	if (Serial.readBytesUntil('\n', buffer, BUFFER_SIZE) > 0)
 	{
+		StaticJsonDocument<200> jsonDoc;
 		DeserializationError error = deserializeJson(jsonDoc, buffer);
 
 		if (!error)
