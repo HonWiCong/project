@@ -25,7 +25,8 @@ bool sensorOut = false;
 const int BUFFER_SIZE = 512;
 char buffer[BUFFER_SIZE];
 
-int mode, fanTemp, dustWindow, petLight, irDistance, light, fan, window;
+int mode = 100;
+int fanTemp, dustWindow, petLight, irDistance, light, fan, window;
 
 void setup()
 {
