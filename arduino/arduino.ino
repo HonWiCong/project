@@ -164,8 +164,8 @@ void loop()
 		//    Serial.println();
 		//    Serial.print("Temperature (F): ");
 		//    Serial.println(dht.toFahrenheit(temperature), 1);
-		//    int fanSpeed = map(temperature, 28, 35, 180, 255); // Map temperature to fan speed (0-255)
-		//
+		
+		int fanSpeed = map(temperature, 28, 35, 180, 255); // Map temperature to fan speed (0-255)
 		int dustValue = analogRead(potentiometerPin);
 		//    Serial.print("Dust Level: ");
 		//    Serial.println(dustValue);
