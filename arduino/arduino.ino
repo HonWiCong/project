@@ -137,17 +137,21 @@ void loop()
 
 		float humidity = dht.getHumidity();
 		float temperature = dht.getTemperature();
-		outgoing["petCounter"] = petCounter;
+
+		outgoing["arduino_petCounter"] = petCounter;
+		outgoing["arduino_humidity"] = humidity;
+		outgoing["arduino_temperature_C"] = temperature;
+		outgoing["arduino_temperature_F"] = dht.toFahrenheit(temperature);
 
 		if (petCounter > petLight)
 		{
 			digitalWrite(LEDPin, HIGH);
-			outgoing["light"] = "ON";
+			outgoing["arduino_light"] = "ON";
 		}
 		else
 		{
 			digitalWrite(LEDPin, LOW);
-			outgoing["light"] = "OFF";
+			outgoing["arduino_light"] = "OFF";
 		}
 
 		serializeJson(outgoing, Serial);
@@ -165,42 +169,60 @@ void loop()
 		//    int dustValue = analogRead(potentiometerPin);
 		//    Serial.print("Dust Level: ");
 		//    Serial.println(dustValue);
-		//
-		//    if (temperature > fanTemp && dustValue > dustWindow)
-		//    {
-		//      myServo.write(180);
-		//      Serial.println("Window: OPEN");
-		//      analogWrite(fanPin, fanSpeed);
-		//      Serial.println("Fan: ON");
-		//      Serial.print("Fan Speed: ");
-		//      Serial.println(fanSpeed);
-		//    }
-		//    else if (temperature > fanTemp && dustValue <= dustWindow)
-		//    {
-		//      myServo.write(0);
-		//      Serial.println("Window: CLOSE");
-		//      analogWrite(fanPin, fanSpeed);
-		//      Serial.println("Fan: ON");
-		//      Serial.print("Fan Speed: ");
-		//      Serial.println(fanSpeed);
-		//    }
-		//    else if (temperature < fanTemp && dustValue > dustWindow)
-		//    {
-		//      myServo.write(180);
-		//      Serial.println("Window: OPEN");
-		//      analogWrite(fanPin, 0);
-		//      Serial.println("Fan: OFF");
-		//      Serial.print("Fan Speed: ");
-		//      Serial.println(0);
-		//    }
-		//    else
-		//    {
-		//      myServo.write(0);
-		//      Serial.println("Window: CLOSE");
-		//      Serial.println("Fan: OFF");
-		//      Serial.print("Fan Speed: ");
-		//      Serial.println(0);
-		//    }
+		outgoing["arduino_dustValue"] = analogRead(potentiometerPin);
+
+		if (temperature > fanTemp && dustValue > dustWindow)
+		{
+			// Serial.println("Window: OPEN");
+			// Serial.println("Fan: ON");
+			// Serial.print("Fan Speed: ");
+			// Serial.println(fanSpeed);
+
+			myServo.write(180);
+			analogWrite(fanPin, fanSpeed);
+			outgoing["arduino_window"] = "OPEN";
+			outgoing["arduino_fan"] = "ON";
+			outgoing["arduino_fanSpeed"] = fanSpeed;
+		}
+		else if (temperature > fanTemp && dustValue <= dustWindow)
+		{
+			// Serial.println("Window: CLOSE");
+			// Serial.println("Fan: ON");
+			// Serial.print("Fan Speed: ");
+			// Serial.println(fanSpeed);
+
+			myServo.write(0);
+			analogWrite(fanPin, fanSpeed);
+			outgoing["arduino_window"] = "CLOSE";
+			outgoing["arduino_fan"] = "ON";
+			outgoing["arduino_fanSpeed"] = fanSpeed;
+		}
+		else if (temperature < fanTemp && dustValue > dustWindow)
+		{
+			// Serial.println("Window: OPEN");
+			// Serial.println("Fan: OFF");
+			// Serial.print("Fan Speed: ");
+			// Serial.println(0);
+			
+			myServo.write(180);
+			analogWrite(fanPin, 0);
+			outgoing["arduino_window"] = "OPEN";
+			outgoing["arduino_fan"] = "OFF";
+			outgoing["arduino_fanSpeed"] = 0;
+		}
+		else
+		{
+			// Serial.println("Window: CLOSE");
+			// Serial.println("Fan: OFF");
+			// Serial.print("Fan Speed: ");
+			// Serial.println(0);
+
+			myServo.write(0);
+			analogWrite(fanPin, 0);
+			outgoing["arduino_window"] = "CLOSE";
+			outgoing["arduino_fan"] = "OFF";
+			outgoing["arduino_fanSpeed"] = 0;
+		}
 		//
 		//    delay(2000);
 	}
