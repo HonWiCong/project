@@ -28,7 +28,13 @@ class SerialInterface:
             self.no_response = True
             return None
 
-        incoming = self.ser.readline().decode("utf-8")
+        incoming = self.ser.readline()
+        try:
+            incoming = incoming.decode("utf-8")
+        except UnicodeDecodeError:
+            print("Error decoding incoming message!")
+            return None
+        
         resp = None
         self.no_response = False
         self.timeout_timer = time.time()
