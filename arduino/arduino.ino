@@ -137,6 +137,7 @@ void loop()
 
 		float humidity = dht.getHumidity();
 		float temperature = dht.getTemperature();
+		outgoing["petCounter"] = petCounter;
 
 		if (petCounter > petLight)
 		{
