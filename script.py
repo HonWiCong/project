@@ -149,7 +149,6 @@ def fetch_data():
                 LIMIT 1
             """)
             raw_data = cursor.fetchone()
-            print(raw_data)
             cache["control"] = raw_data["control"]
             cache["fanTemp"] = raw_data["fanTemp"] 
             cache["dustWindow"] = raw_data["dustWindow"]

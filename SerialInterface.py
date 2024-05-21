@@ -24,6 +24,7 @@ class SerialInterface:
 
         if self.ser.in_waiting == 0:
             # Nothing received
+            print("Dont listen to me!")
             self.no_response = True
             return None
 
