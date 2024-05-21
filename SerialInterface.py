@@ -13,17 +13,6 @@ class SerialInterface:
         self.ser = serial.Serial(port, baudrate=baud, timeout=2)
         time.sleep(2)
 
-    def receive_confirmation(self):
-        while True:
-            line = self.ser.readline().decode('utf-8').strip()
-            # print(f"Received from Arduino in receive_confirmation: {line}")
-            if line.startswith("Done"):
-                print("Return true")
-                return True
-            elif line.startswith("Error"):
-                print("Return false")
-                return False
-
     def read_msg(self):
         """Reads a line from the serial buffer,
         decodes it and returns its contents as a dict."""
@@ -35,7 +24,6 @@ class SerialInterface:
 
         if self.ser.in_waiting == 0:
             # Nothing received
-            print("No response from Arduino")
             self.no_response = True
             return None
 
