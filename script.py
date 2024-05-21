@@ -160,16 +160,27 @@ def fetch_data():
             cache["fan"] = raw_data["fanState"]
             cache["window"] = raw_data["windowState"]
             
-            data = {
-                    'control': 1 if cache['control'] == 'true' else 0,
-                    'fanTemp': cache["fanTemp"],
-                    'dustWindow': cache["dustWindow"],
-                    'petLight': cache["petLight"],
-                    'irDistance': cache["irDistance"],
+            # data = {
+            #         'control': 1 if cache['control'] == 'true' else 0,
+            #         'fanTemp': cache["fanTemp"],
+            #         'dustWindow': cache["dustWindow"],
+            #         'petLight': cache["petLight"],
+            #         'irDistance': cache["irDistance"],
 
-                    'light': cache["light"],
-                    'fan': cache["fan"],
-                    'window': cache["window"],
+            #         'light': cache["light"],
+            #         'fan': cache["fan"],
+            #         'window': cache["window"],
+            # }
+            data = {
+                    'control': 0,
+                    'fanTemp': 33,
+                    'dustWindow': 500,
+                    'petLight': 2,
+                    'irDistance': 10,
+
+                    'light': 1,
+                    'fan': 1,
+                    'window': 1,
             }
             
             # try:
@@ -180,7 +191,7 @@ def fetch_data():
             # except:
             #     print("Error in write")
             
-            iface.write(data)
+            iface.write_msg(data)
             connection.commit()
             time.sleep(1)
 
