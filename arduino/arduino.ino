@@ -166,7 +166,7 @@ void loop()
 		//    Serial.println(dht.toFahrenheit(temperature), 1);
 		//    int fanSpeed = map(temperature, 28, 35, 180, 255); // Map temperature to fan speed (0-255)
 		//
-		//    int dustValue = analogRead(potentiometerPin);
+		int dustValue = analogRead(potentiometerPin);
 		//    Serial.print("Dust Level: ");
 		//    Serial.println(dustValue);
 		outgoing["arduino_dustValue"] = analogRead(potentiometerPin);
@@ -203,7 +203,7 @@ void loop()
 			// Serial.println("Fan: OFF");
 			// Serial.print("Fan Speed: ");
 			// Serial.println(0);
-			
+
 			myServo.write(180);
 			analogWrite(fanPin, 0);
 			outgoing["arduino_window"] = "OPEN";
