@@ -2,7 +2,7 @@
 #include "DHT.h"
 #include <ArduinoJson.h>
 
-StaticJsonDocument<100> outgoing;
+StaticJsonDocument<200> outgoing;
 
 DHT dht;
 int DHTPin = 5;
@@ -62,22 +62,34 @@ void getInput()
 		window = jsonDoc["window"];
 
 		// Serial.println("Success");
-		Serial.print("Mode: ");
-		Serial.println(mode);
-		Serial.print("Fan Temp: ");
-		Serial.println(fanTemp);
-		Serial.print("Dust Window: ");
-		Serial.println(dustWindow);
-		Serial.print("Pet Light: ");
-		Serial.println(petLight);
-		Serial.print("IR Distance: ");
-		Serial.println(irDistance);
-		Serial.print("Light: ");
-		Serial.println(light);
-		Serial.print("Fan: ");
-		Serial.println(fan);
-		Serial.print("Window: ");
-		Serial.println(window);
+		// Serial.print("Mode: ");
+		// Serial.println(mode);
+		// Serial.print("Fan Temp: ");
+		// Serial.println(fanTemp);
+		// Serial.print("Dust Window: ");
+		// Serial.println(dustWindow);
+		// Serial.print("Pet Light: ");
+		// Serial.println(petLight);
+		// Serial.print("IR Distance: ");
+		// Serial.println(irDistance);
+		// Serial.print("Light: ");
+		// Serial.println(light);
+		// Serial.print("Fan: ");
+		// Serial.println(fan);
+		// Serial.print("Window: ");
+		// Serial.println(window);
+
+		outgoing["Mode"] = mode;
+		outgoing["Fan Temp"] = fanTemp;
+		outgoing["Dust Window"] = dustWindow;
+		outgoing["Pet Light"] = petLight;
+		outgoing["IR Distance"] = irDistance;
+		outgoing["Light"] = light;
+		outgoing["Fan"] = fan;
+		outgoing["Window"] = window;
+
+		serializeJson(outgoing, Serial);
+		Serial.print('\n');
 	}
 	else
 	{

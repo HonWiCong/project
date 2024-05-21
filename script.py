@@ -187,14 +187,14 @@ def fetch_data():
 
 def process_data():
     print("Processing data")
-    previous_cat_room_pet_number = None
 
     while True:
         response = iface.read_msg()
-        print(f"Response: {response}")
 
         if (response is None):
             continue
+        else:
+            print(f"Response: {response}")
 
         # if cache['control'] is not None:
         #     control = cache['control']
