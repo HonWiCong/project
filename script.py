@@ -170,100 +170,85 @@ def fetch_data():
                     'fan': cache["fan"],
                     'window': cache["window"],
             }
-            print("Data:", data)
-
-            # data = {
-            #         'control': 0,
-            #         'fanTemp': 33,
-            #         'dustWindow': 500,
-            #         'petLight': 2,
-            #         'irDistance': 10,
-
-            #         'light': 1,
-            #         'fan': 1,
-            #         'window': 1,
-            # }
-            
-            # try:
-            #     #print("Data:", data)
-            #     #data_to_send = f'{control},{cache["fanTemp"]},{cache["dustWindow"]},{153},{cache["irDistance"]},{cache["light"]},{cache["fan"]},{cache["window"]}\n'
-            #     #print("Data to send:", data_to_send)
-            #     #ser.write(data_to_send.encode())
-            # except:
-            #     print("Error in write")
+            #print("Data:", data)
             
             iface.write_msg(data)
             connection.commit()
             time.sleep(1)
 
+arduino_petCounter = None
+arduino_light = None
+arduino_humidity = None
+arduino_temperature_C = None
+arduino_temperature_F = None
+arduino_dustValue = None
+arduino_window = None
+arduino_fan = None
+arduino_fanSpeed = None
+
+def assign_values(response):
+    global arduino_petCounter, arduino_light, arduino_humidity, arduino_temperature_C, arduino_temperature_F, arduino_dustValue, arduino_window, arduino_fan, arduino_fanSpeed
+    if ('arduino_petCounter' in response):
+        arduino_petCounter = response['arduino_petCounter']
+
+    if ('arduino_light' in response):
+        arduino_light = response['arduino_light']
+
+    if ('arduino_humidity' in response):
+        arduino_humidity = response['arduino_humidity']
+
+    if ('arduino_temperature_C' in response):
+        arduino_temperature_C = response['arduino_temperature_C']
+
+    if ('arduino_temperature_F' in response):
+        arduino_temperature_F = response['arduino_temperature_F']
+
+    if ('arduino_dustValue' in response):
+        arduino_dustValue = response['arduino_dustValue']
+
+    if ('arduino_window' in response):
+        arduino_window = response['arduino_window']
+
+    if ('arduino_fan' in response):
+        arduino_fan = response['arduino_fan']
+
+    if ('arduino_fanSpeed' in response):
+        arduino_fanSpeed = response['arduino_fanSpeed']
 
 def process_data():
     print("Processing data")
+    previous_cat_room_pet_number = None
 
     while True:
         response = iface.read_msg()
 
         if (response is None):
             continue
-        else:
-            print(f"Response: {response}")
+        
+        print(f"Response: {response}")
+        assign_values(response)
 
-        # if cache['control'] is not None:
-        #     control = cache['control']
+        if arduino_petCounter != previous_cat_room_pet_number:
+            previous_cat_room_pet_number = arduino_petCounter
 
-        #     if control == 'false':
-        #         if response.startswith("Room: "):
-        #             room = response.split("Room: ")[1].rstrip()
+            if arduino_petCounter == 0:
+                cloudCursor.execute("INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
+                cloudDB.commit()
+            elif arduino_petCounter > 0:
+                cloudCursor.execute(
+                    "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (arduino_petCounter, arduino_light, arduino_humidity, arduino_temperature_C, arduino_temperature_F, arduino_window, arduino_fan, arduino_fanSpeed))
+                newInsertedID = cloudCursor.lastrowid
+                cloudCursor.execute(
+                    "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
+                    (newInsertedID, arduino_dustValue))
+                cloudDB.commit()
 
-        #             # Get current date and time
-        #             current_datetime = datetime.now()
-
-        #             # Format date and time
-        #             formatted_date = current_datetime.strftime('%d %B %Y, %A')
-        #             formatted_time = current_datetime.strftime('%I:%M %p')
-
-        #             # Read sensor data lines from serial
-        #             lines = []
-        #             while len(lines) < 9:
-        #                 if ser.in_waiting > 0:
-        #                     lines.append(ser.readline().decode('utf-8').strip())
-
-        #             # Process the lines
-        #             current_cat_room_pet_number = int(lines[0].rsplit("Total pets inside: ")[1])
-        #             light = 1 if lines[1].split("Light: ")[1] == "ON" else 0
-        #             humidity = float(lines[2].split("Humidity: ")[1])
-        #             temperature_C = float(lines[3].split("Temperature (C): ")[1])
-        #             temperature_F = float(lines[4].split("Temperature (F): ")[1])
-        #             dust_level = int(lines[5].split("Dust Level: ")[1])
-        #             window = 1 if lines[6].split("Window: ")[1] == "OPEN" else 0
-        #             fan = 1 if lines[7].split("Fan: ")[1] == "ON" else 0
-        #             fan_speed = int(lines[8].split("Fan Speed: ")[1])
-
-        #             if current_cat_room_pet_number != previous_cat_room_pet_number:
-        #                 previous_cat_room_pet_number = current_cat_room_pet_number
-
-        #                 if current_cat_room_pet_number == 0:
-        #                     cloudCursor.execute("INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
-        #                     cloudDB.commit()
-        #                 elif current_cat_room_pet_number > 0:
-        #                     cloudCursor.execute(
-        #                         "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-        #                         (current_cat_room_pet_number, light, humidity, temperature_C, temperature_F, window, fan, fan_speed))
-        #                     newInsertedID = cloudCursor.lastrowid
-        #                     cloudCursor.execute(
-        #                         "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
-        #                         (newInsertedID, dust_level))
-        #                     cloudDB.commit()
-
-        #             elif current_cat_room_pet_number > 0 and current_cat_room_pet_number == previous_cat_room_pet_number:
-        #                 cloudCursor.execute(
-        #                     "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
-        #                     (newInsertedID, dust_level))
-        #                 cloudDB.commit()
-        #     else:
-        #         print("Invalid control value:", control)
-        # else:
-        #     print("No data in Mode_Table")
+        elif arduino_petCounter > 0 and arduino_petCounter == previous_cat_room_pet_number:
+            cloudCursor.execute(
+                "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
+                (newInsertedID, arduino_dustValue))
+            cloudDB.commit()
 
 thread = threading.Thread(target=process_data)
 thread.start()

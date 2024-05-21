@@ -38,8 +38,6 @@ void setup()
 	pinMode(LEDPin, OUTPUT);
 
 	Serial.begin(9600);
-	while (!Serial)
-		;
 }
 
 void getInput()
@@ -115,7 +113,7 @@ void loop()
 			}
 
 			petCounter++;
-			delay(3000);
+			delay(2000);
 		}
 		else if (IROut > 10)
 		{
@@ -133,7 +131,7 @@ void loop()
 			}
 
 			petCounter--;
-			delay(3000);
+			delay(2000);
 		}
 
 		float humidity = dht.getHumidity();
