@@ -2,11 +2,13 @@ import mysql.connector
 import serial
 import threading
 from datetime import datetime
-from flask import Flask, request, render_template, redirect, url_for, session, current_app
+from flask import Flask, request, render_template, redirect, url_for, session, current_app, Response
 import os
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from picamera2 import Picamera2
+import cv2
 import re
 
 app = Flask(__name__)
@@ -217,3 +219,24 @@ def catRoom():
         print("Error:", e)
 
     return render_template('cat-room.html', data=cats_list)
+
+
+# For cat_room livw streaming
+camera = Picamera2()
+camera.configure(camera.create_preview_configuration(
+    main={"format": 'XRGB8888', "size": (640, 480)}))
+camera.start()
+
+
+def generate_frames():
+    while True:
+        frame = camera.capture_array()
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
