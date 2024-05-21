@@ -155,9 +155,6 @@ void loop()
 			outgoing["arduino_light"] = "OFF";
 		}
 
-		serializeJson(outgoing, Serial);
-		Serial.print('\n');
-
 		//    Serial.print("Humidity: ");
 		//    Serial.println(humidity, 1);
 		//    Serial.print("Temperature (C): ");
@@ -224,6 +221,9 @@ void loop()
 			outgoing["arduino_fan"] = "OFF";
 			outgoing["arduino_fanSpeed"] = 0;
 		}
+
+		serializeJson(outgoing, Serial);
+		Serial.print('\n');
 		//
 		//    delay(2000);
 	}
