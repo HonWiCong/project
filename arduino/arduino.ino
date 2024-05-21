@@ -139,9 +139,10 @@ void loop()
 		float temperature = dht.getTemperature();
 
 		outgoing["arduino_petCounter"] = petCounter;
-		outgoing["arduino_humidity"] = humidity;
-		outgoing["arduino_temperature_C"] = temperature;
-		outgoing["arduino_temperature_F"] = dht.toFahrenheit(temperature);
+
+		outgoing["arduino_humidity"] = round(humidity * 10.0) / 10.0;
+		outgoing["arduino_temperature_C"] = round(temperature * 10.0) / 10.0;
+		outgoing["arduino_temperature_F"] = round(dht.toFahrenheit(temperature) * 10.0) / 10.0;
 
 		if (petCounter > petLight)
 		{
@@ -164,7 +165,7 @@ void loop()
 		//    Serial.println();
 		//    Serial.print("Temperature (F): ");
 		//    Serial.println(dht.toFahrenheit(temperature), 1);
-		
+
 		int fanSpeed = map(temperature, 28, 35, 180, 255); // Map temperature to fan speed (0-255)
 		int dustValue = analogRead(potentiometerPin);
 		//    Serial.print("Dust Level: ");
