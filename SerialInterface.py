@@ -14,6 +14,7 @@ class SerialInterface:
         time.sleep(2)
 
     def read_msg(self):
+        time.sleep(0.06)
         """Reads a line from the serial buffer,
         decodes it and returns its contents as a dict."""
         # now = time.time()
@@ -24,7 +25,8 @@ class SerialInterface:
 
         if self.ser.in_waiting == 0:
             # Nothing received
-            # print("Dont listen to me!")
+            #print("Dont listen to me!")
+            print("No messagge waiting")
             self.no_response = True
             return None
 
@@ -60,17 +62,18 @@ class SerialInterface:
         """Sends a JSON-formatted command to the serial
         interface."""
         time.sleep(0.06)
-        if self.no_response:
-            # If no response was received last time, we don't send another request
-            return
+        #if self.no_response:
+            ## If no response was received last time, we don't send another request
+            #return
 
         try:
             json_msg = json.dumps(message)
             self.ser.write(json_msg.encode("utf-8"))
-            # self.ser.write(b'\n')
+            self.ser.write(b'\n')
         except TypeError:
             print("Unable to serialize message.")
 
     def close(self):
         """Close the Serial connection."""
         self.ser.close()
+
