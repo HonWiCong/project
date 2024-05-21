@@ -170,6 +170,8 @@ def fetch_data():
                     'fan': cache["fan"],
                     'window': cache["window"],
             }
+            print("Data:", data)
+
             # data = {
             #         'control': 0,
             #         'fanTemp': 33,
