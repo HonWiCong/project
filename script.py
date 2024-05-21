@@ -228,27 +228,30 @@ def process_data():
         print(f"Response: {response}")
         assign_values(response)
 
-        if arduino_petCounter != previous_cat_room_pet_number:
-            previous_cat_room_pet_number = arduino_petCounter
+        if arduino_petCounter is not None:
+            if arduino_petCounter != previous_cat_room_pet_number:
+                previous_cat_room_pet_number = arduino_petCounter
 
-            if arduino_petCounter == 0:
-                cloudCursor.execute("INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
-                cloudDB.commit()
-            elif arduino_petCounter > 0:
-                cloudCursor.execute(
-                    "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                    (arduino_petCounter, arduino_light, arduino_humidity, arduino_temperature_C, arduino_temperature_F, arduino_window, arduino_fan, arduino_fanSpeed))
-                newInsertedID = cloudCursor.lastrowid
+                if arduino_petCounter == 0:
+                    cloudCursor.execute("INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (0, 0, 0, 0, 0, 0, 0, 0)")
+                    cloudDB.commit()
+                elif arduino_petCounter > 0:
+                    cloudCursor.execute(
+                        "INSERT INTO Cat_Table (petCount, lightState, humidity, temperature_C, temperature_F, windowState, fanState, fanSpeed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        (arduino_petCounter, arduino_light, arduino_humidity, arduino_temperature_C, arduino_temperature_F, arduino_window, arduino_fan, arduino_fanSpeed))
+                    newInsertedID = cloudCursor.lastrowid
+                    cloudCursor.execute(
+                        "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
+                        (newInsertedID, arduino_dustValue))
+                    cloudDB.commit()
+
+            elif arduino_petCounter > 0 and arduino_petCounter == previous_cat_room_pet_number:
                 cloudCursor.execute(
                     "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
                     (newInsertedID, arduino_dustValue))
                 cloudDB.commit()
 
-        elif arduino_petCounter > 0 and arduino_petCounter == previous_cat_room_pet_number:
-            cloudCursor.execute(
-                "INSERT INTO Cat_Dust_Table (catTableId, dustLevel) VALUES (%s, %s)",
-                (newInsertedID, arduino_dustValue))
-            cloudDB.commit()
+        
 
 thread = threading.Thread(target=process_data)
 thread.start()
