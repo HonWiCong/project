@@ -43,58 +43,43 @@ void setup()
 
 void getInput()
 {
-	// Serial.println("Getting input");
-	// Serial.readBytesUntil('\n', buffer, BUFFER_SIZE);
+	// Clear buffer before reading
+	memset(buffer, 0, BUFFER_SIZE);
 
-	StaticJsonDocument<200> jsonDoc;
-	DeserializationError error = deserializeJson(jsonDoc, Serial);
-
-	if (!error)
+	// Read data from serial until newline
+	if (Serial.readBytesUntil('\n', buffer, BUFFER_SIZE) > 0)
 	{
-		mode = jsonDoc["control"];
-		fanTemp = jsonDoc["fanTemp"];
-		dustWindow = jsonDoc["dustWindow"];
-		petLight = jsonDoc["petLight"];
-		irDistance = jsonDoc["irDistance"];
+		StaticJsonDocument<200> jsonDoc;
+		DeserializationError error = deserializeJson(jsonDoc, buffer);
 
-		light = jsonDoc["light"];
-		fan = jsonDoc["fan"];
-		window = jsonDoc["window"];
+		if (!error)
+		{
+			mode = jsonDoc["control"];
+			fanTemp = jsonDoc["fanTemp"];
+			dustWindow = jsonDoc["dustWindow"];
+			petLight = jsonDoc["petLight"];
+			irDistance = jsonDoc["irDistance"];
 
-		// Serial.println("Success");
-		// Serial.print("Mode: ");
-		// Serial.println(mode);
-		// Serial.print("Fan Temp: ");
-		// Serial.println(fanTemp);
-		// Serial.print("Dust Window: ");
-		// Serial.println(dustWindow);
-		// Serial.print("Pet Light: ");
-		// Serial.println(petLight);
-		// Serial.print("IR Distance: ");
-		// Serial.println(irDistance);
-		// Serial.print("Light: ");
-		// Serial.println(light);
-		// Serial.print("Fan: ");
-		// Serial.println(fan);
-		// Serial.print("Window: ");
-		// Serial.println(window);
+			light = jsonDoc["light"];
+			fan = jsonDoc["fan"];
+			window = jsonDoc["window"];
 
-		outgoing["Mode"] = mode;
-		outgoing["Fan Temp"] = fanTemp;
-		outgoing["Dust Window"] = dustWindow;
-		outgoing["Pet Light"] = petLight;
-		outgoing["IR Distance"] = irDistance;
-		outgoing["Light"] = light;
-		outgoing["Fan"] = fan;
-		outgoing["Window"] = window;
+			outgoing["Mode"] = mode;
+			outgoing["Fan Temp"] = fanTemp;
+			outgoing["Dust Window"] = dustWindow;
+			outgoing["Pet Light"] = petLight;
+			outgoing["IR Distance"] = irDistance;
+			outgoing["Light"] = light;
+			outgoing["Fan"] = fan;
+			outgoing["Window"] = window;
 
-		serializeJson(outgoing, Serial);
-		Serial.print('\n');
-	}
-	else
-	{
-		Serial.println("Error");
-		// Serial.println("Done");
+			serializeJson(outgoing, Serial);
+			Serial.print('\n');
+		}
+		else
+		{
+			Serial.println("Error deserializing JSON");
+		}
 	}
 }
 
